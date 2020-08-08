@@ -5,7 +5,7 @@ from decimal import *
 from django.shortcuts import render
 import json
 from django.http.response import HttpResponse, JsonResponse
-from liweb.models import *      #把liweb模块的models引入
+from liweb.models import *  #把liweb模块的models引入
 from datetime import datetime
 import datetime
 from django.db.models import Count
@@ -59,13 +59,11 @@ def ResponslibityDoApi(request):
    if request.method == "POST":
         userid = request.POST.get('user_id')
         code = request.POST.get('code')
-        u= UserInfo.objects.filter(id=userid,)
-        # book_list = models.Book.objects.all().annotate(author_num=Count("author"))
-        #role_resp_num= RespList.objects.filter(userid).count()  统计数量1.可能直接统计relation表的id数量2.可能需要Select出Resplist之后，统计个数
-        role_resp_num = RespRoleRelation.objects.filter(userid).count()
-        role_obs_num= ObserRoleRelation.objects.filter(userid).Count()
-        par_resp_num= PartyUserRelation.objects.filter(userid).count()
-        par_obs_num= ObserPartyRelation.objects.filter(userid).count()
+        u= UserInfo.objects.filter(id=userid)
+        r= RoleInfo.objects.filter(id=u[0].roleuserrelation_set.first().role.id)
+        p= PartyBranch.objects.filter(id=u[0].partyuserrelation_set.first().party_branch.id)
+        #par_resp_num= PartyUserRelation.objects.filter(userid).count()
+
 
         response = {}
         if u.exists():
@@ -73,13 +71,12 @@ def ResponslibityDoApi(request):
             response['message']='查询成功'
             response['flag'] = 'true'
             response['code'] = 20000
-            #data = {'content': u[0].url}
-            data = {'role': u[0].role,
-                    'role_resp_num':role_resp_num,
-                    'role_obs_num':role_obs_num,
-                    'party_branch':u[0].part_branch,
-                    'par_resp_num':par_resp_num,
-                    'par_obs_num':par_obs_num,
+            data = {'role': u[0].roleuserrelation_set.first().role.role,
+                    'role_resp_num':r[0].resprolerelation_set.count(),
+                    'role_obs_num':r[0].obserrolerelation_set.count(),
+                    'party_branch':u[0].partyuserrelation_set.first().party_branch.party_branch,
+                    'par_resp_num':p[0].partyuserrelation_set.count(),#没有Part_resp_relation表，无法明确确定党组织责任？？？？？
+                    'par_obs_num':p[0].obserpartyrelation_set.count(),
                     }
 
         else:
@@ -116,16 +113,19 @@ def ResponslibitylistscDoApi(request):
         userid = request.POST.get('user_id')
         code= request.POST.get('code')
         u = UserInfo.objects.filter(id=userid)
+        p_o = PartyBranch.objects.filter(id= u[0].partyuserrelation_set.first().party_branch.id)
+        p_r = RespDepRelation.objects.filter(department_id=u[0].department.id)
+
+
         response = {}
         if u.exists():
 
             response['message'] = '查询成功'
             response['flag'] = 'true'
             response['code'] = 20000
-            # data = {'content': u[0].url}
-            data = {'party_branch': u[0].party_branch,
-                    'par_resp': u[0].content,
-                    'par_obs': u[0].observation_point,
+            data = {'party_branch': u[0].partyuserrelation_set.first().party_branch.party_branch,
+                    'par_resp': p_r[0].resp.content,
+                    'par_obs': p_o[0].obserpartyrelation_set.first().observation.observation_point,
                     }
 
         else:

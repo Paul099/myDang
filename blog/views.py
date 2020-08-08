@@ -90,7 +90,7 @@ def IndexDoApi(request):
     # }
     if request.method == "POST":
         code = request.POST.get('code')
-
+        u = FileInfo.objects.filter(file_type=1).values()
         response = {}
 
         response['message'] = '查询成功'
