@@ -157,11 +157,11 @@ class MeetingAnswer(models.Model):
 
 class MeetingUserRelation(models.Model):
     id = models.IntegerField(primary_key=True)
-    meeting = models.ForeignKey(Meeting, models.DO_NOTHING, blank=True, null=True)
+    meeting = models.ForeignKey('Meeting', models.DO_NOTHING, blank=True, null=True)
     user = models.ForeignKey('UserInfo', models.DO_NOTHING, blank=True, null=True)
-    answer_id = models.IntegerField(blank=True, null=True)
+    answer = models.ForeignKey(MeetingAnswer, models.DO_NOTHING, blank=True, null=True)
     reason = models.CharField(max_length=255, blank=True, null=True)
-    answer = models.CharField(max_length=255, blank=True, null=True)
+    answer_0 = models.CharField(db_column='answer', max_length=255, blank=True, null=True)  # Field renamed because of name conflict.
     answer_remake = models.CharField(max_length=255, blank=True, null=True)
     is_sign = models.IntegerField(blank=True, null=True)
     time_sign = models.DateTimeField(blank=True, null=True)

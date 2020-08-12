@@ -84,6 +84,8 @@ DATABASES = {
         'PASSWORD':'party123$#@!',
         'HOST':'rm-2ze0mbg8o9ea363302o.mysql.rds.aliyuncs.com',
         'POST':'3306',
+        'CHARSET':'utf8',
+        'COLLATION':'utf8_general_ci'
     }
 }
 
@@ -110,9 +112,9 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/2.2/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'zh-Hans'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Shanghai'
 
 USE_I18N = True
 
