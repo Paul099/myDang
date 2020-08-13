@@ -136,7 +136,7 @@ class FileInfo(models.Model):
 
 class Meeting(models.Model):
     id = models.IntegerField(primary_key=True)
-    sponsor = models.IntegerField(blank=True, null=True)
+    sponsor = models.CharField(max_length=255, blank=True, null=True)
     time = models.DateTimeField(blank=True, null=True)
     theme = models.CharField(max_length=255, blank=True, null=True)
     place = models.CharField(max_length=255, blank=True, null=True)
@@ -397,6 +397,7 @@ class UserInfo(models.Model):
     password = models.CharField(max_length=255, blank=True, null=True)
     job_id = models.IntegerField(blank=True, null=True)
     is_ratifier = models.IntegerField(blank=True, null=True)
+    code = models.CharField(max_length=255, blank=True, null=True)
 
     class Meta:
         managed = False

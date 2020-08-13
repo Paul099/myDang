@@ -8,7 +8,7 @@ from django.http.response import HttpResponse, JsonResponse
 from liweb.models import *  #把liweb模块的models引入
 from datetime import datetime
 import datetime
-from django.db.models import Count
+from django.db.models import Count,Max
 
 class CJsonEncoder(json.JSONEncoder):
     # 转换datatime
@@ -222,7 +222,7 @@ def ManagamentDoApi(request):
         userid = request.POST.get('user_id')
         code= request.POST.get('code')
         u = UserInfo.objects.filter(id=userid)
-        m = MeetingUserRelation.objects.filter(user_id=userid).filter(answer=2)
+        m = MeetingUserRelation.objects.filter(user_id=userid,answer_id=2)
 
         response = {}
         if u.exists():
@@ -308,7 +308,7 @@ def ManagamentInquireDoApi(request):
 
         response['data'] = data
 
-        return HttpResponse(json.dumps(response), content_type="application/json")
+        return HttpResponse(json.dumps(response,cls=CJsonEncoder), content_type="application/json")
 
     else:
 
@@ -368,11 +368,11 @@ def ManagamentSpecificDoApi(request):
                     'sponsor':m[0].sponsor,
                     'type':t[0].type.type,
                     'state':t[0].state.state,
-                    'tz_user':u.values_list('user_name'),
-                    'cj_user':u.filter(meetinguserrelation__answer_0=1).values_list('user_name'),
-                    'qj_user':u.filter(meetinguserrelation__answer=2).values_list('user_name'),
+                    'tz_user':list(u.values_list('user_name')),
+                    'cj_user':list(u.filter(meetinguserrelation__answer=1).values_list('user_name')),
+                    'qj_user':list(u.filter(meetinguserrelation__answer=2).values_list('user_name')),#存在bug，answer=2的筛选不出？？？？
                     'answer':mu[0].answer.answer,
-                    'content':t[0].content
+                    'content':t[0].content,
 
                     }
 
@@ -384,7 +384,7 @@ def ManagamentSpecificDoApi(request):
 
         response['data'] = data
 
-        return HttpResponse(json.dumps(response), content_type="application/json")
+        return HttpResponse(json.dumps(response,cls=CJsonEncoder), content_type="application/json")
 
     else:
 
@@ -406,19 +406,52 @@ def ManagamentAddDoApi(request):
         code = request.POST.get('code')
         theme = request.POST.get('theme')
         department = request.POST.get('department')
-        time = request.POST.get('time')
+        #time = request.POST.get('time')#时间作为请求参数
         place = request.POST.get('place')
         sponsor = request.POST.get('sponsor')
         type = request.POST.get('type')
+        state =request.POST.get('state')
         userid = request.POST.get('user_id')
-        content = request.POST.get('content')
+        content = request.POST.get('content')#对于存在的id可能无法添加？？？？
         response = {}
-        d = Department.objects.create(name=department)
-        m = Meeting.objects.create(theme=theme,time=time,place=place,sponsor =sponsor,content=content,)
-        u = UserInfo.objects.create(id = userid)
-        t = TaskType.objects.create(type=type)
 
-        if m|d|u|t.exists() :
+        d_idmax = Department.objects.aggregate(idmax=Max('id'))
+        d = Department.objects.create(id =d_idmax['idmax']+1,name=department)
+        d.save()
+
+        m_idmax = Meeting.objects.aggregate(idmax=Max('id'))
+        m = Meeting.objects.create(id=m_idmax['idmax']+1,theme=theme,place=place,sponsor =sponsor,)#time=time,)
+        m.save()
+
+        u = UserInfo.objects.create(id = userid,department_id=d_idmax['idmax']+1)
+        u.save()
+
+        tt_idmax = TaskType.objects.aggregate(idmax=Max('id'))
+        tt = TaskType.objects.create(id=tt_idmax['idmax']+1,type=type)
+        tt.save()
+
+        ts_idmax = TaskType.objects.aggregate(idmax=Max('id'))
+        ts = TaskState.objects.create(id=ts_idmax['idmax'] + 1, state=state)
+        ts.save()
+
+        t_idmax = Task.objects.aggregate(idmax=Max('id'))
+        t = Task.objects.create(id=t_idmax['idmax']+1,content=content,state_id=ts_idmax['idmax'] + 1,type_id=tt_idmax['idmax']+1)
+        t.save()
+
+        um_idmax =MeetingUserRelation.objects.aggregate(idmax=Max('id'))
+        um =MeetingUserRelation.objects.create(id=um_idmax['idmax']+1,meeting_id=m_idmax['idmax']+1,user_id=userid)
+        um.save()
+
+        ut_start = TaskUserRelation.objects.count()
+        ut_idmax =TaskUserRelation.objects.aggregate(idmax=Max('id'))
+        ut =TaskUserRelation.objects.create(id=ut_idmax['idmax']+1,task_id=t_idmax['idmax']+1,user_id=userid)
+        ut.save()
+        ut_end =TaskUserRelation.objects.count()
+
+
+
+
+        if ut_start <ut_end:
 
             response['message'] = '添加成功'
             response['flag'] = 'true'
@@ -435,11 +468,15 @@ def ManagamentAddDoApi(request):
 
         response['data'] = data
 
-        return HttpResponse(json.dumps(response), content_type="application/json")
+        return HttpResponse(json.dumps(response,), content_type="application/json")
 
     else:
 
         return HttpResponse("请用post方式访问")
+
+
+
+
 
 
 
@@ -466,7 +503,7 @@ def ManagamentInviteDoApi(request):
 
 
         response = {}
-        if v.exists() :
+        if v.meeting_id ==meetingid :
 
             response['message'] = '邀请成功'
             response['flag'] = 'true'
@@ -476,7 +513,7 @@ def ManagamentInviteDoApi(request):
                     }
 
         else:
-            response['message'] = '邀请失败'
+            response['message'] = '用户不存在'
             response['flag'] = 'flase'
             response['code'] = 40000
             data = {}
@@ -488,3 +525,54 @@ def ManagamentInviteDoApi(request):
     else:
 
         return HttpResponse("请用post方式访问")
+
+
+
+
+
+
+def ManagamentSignDoApi(request):
+    # {
+    #     "code":"20000"
+    #              "flag":"true"
+    #                    "message":"签到成功"
+    #                           "data":{
+    #              'is succeed':1
+    # }
+    if request.method == "POST":
+        code = request.POST.get('code')
+        #time = request.POST.get('time')  #请求参数里面包含time  格式不对
+        location = request.POST.get('location')
+        meetingid = request.POST.get('meeting_id')
+
+        userid = UserInfo.objects.filter(code=code)
+        m = Meeting.objects.filter(meetinguserrelation__user_id=userid[0].id,place=location,id=meetingid)
+
+
+
+
+
+        response = {}
+        if m.exists() :
+
+            response['message'] = '签到成功'
+            response['flag'] = 'true'
+            response['code'] = 20000
+            data = {'is succeed':1
+
+                    }
+
+        else:
+            response['message'] = '签到失败'
+            response['flag'] = 'flase'
+            response['code'] = 40000
+            data = {}
+
+        response['data'] = data
+
+        return HttpResponse(json.dumps(response), content_type="application/json")
+
+    else:
+
+        return HttpResponse("请用post方式访问")
+
