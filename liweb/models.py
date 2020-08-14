@@ -397,7 +397,7 @@ class UserInfo(models.Model):
     password = models.CharField(max_length=255, blank=True, null=True)
     job_id = models.IntegerField(blank=True, null=True)
     is_ratifier = models.IntegerField(blank=True, null=True)
-    code = models.CharField(max_length=255, blank=True, null=True)
+    vx_code = models.CharField(max_length=255, blank=True, null=True)
 
     class Meta:
         managed = False

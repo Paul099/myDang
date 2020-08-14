@@ -9,6 +9,11 @@ from liweb.models import *  #把liweb模块的models引入
 from datetime import datetime
 import datetime
 from django.db.models import Count,Max
+import random
+import string
+
+
+
 
 class CJsonEncoder(json.JSONEncoder):
     # 转换datatime
@@ -40,7 +45,7 @@ def dictfetchall(cursor):
 
 # Create your views here.
 
-
+#3--1.责任数据统计接口
 def ResponslibityDoApi(request):
     # {
     #     "code": "20000"
@@ -97,7 +102,7 @@ def ResponslibityDoApi(request):
 
 
 
-
+#3--2.单位责任清单接口
 def ResponsLibitylistDoApi(request):
     # {
     #     "code":"20000"
@@ -152,7 +157,7 @@ def ResponsLibitylistDoApi(request):
 
 
 
-
+#3--3.学校责任清单接口
 def ResponslibitylistscDoApi(request):
     # {
     #     "code":"20000"
@@ -205,7 +210,7 @@ def ResponslibitylistscDoApi(request):
 
 
 
-
+#5--1、会议数据统计接口
 def ManagamentDoApi(request):
     # {
     #     "code":"20000"
@@ -256,7 +261,7 @@ def ManagamentDoApi(request):
 
 
 
-
+#5--2、会议列表查询接口
 def ManagamentInquireDoApi(request):
     # {
     #     "code":"20000"
@@ -323,7 +328,7 @@ def ManagamentInquireDoApi(request):
 
 
 
-
+#5--3、会议具体内容查询接口
 def ManagamentSpecificDoApi(request):
     # {
     #     "code":"20000"
@@ -393,7 +398,7 @@ def ManagamentSpecificDoApi(request):
 
 
 
-
+#5--4、增加会议接口
 def ManagamentAddDoApi(request):
     # {
     #     "code":"20000"
@@ -430,7 +435,7 @@ def ManagamentAddDoApi(request):
         tt = TaskType.objects.create(id=tt_idmax['idmax']+1,type=type)
         tt.save()
 
-        ts_idmax = TaskType.objects.aggregate(idmax=Max('id'))
+        ts_idmax = TaskState.objects.aggregate(idmax=Max('id'))
         ts = TaskState.objects.create(id=ts_idmax['idmax'] + 1, state=state)
         ts.save()
 
@@ -482,7 +487,7 @@ def ManagamentAddDoApi(request):
 
 
 
-
+#5--5、邀请参会人接口
 def ManagamentInviteDoApi(request):
     # {
     #     "code":"20000"
@@ -529,9 +534,8 @@ def ManagamentInviteDoApi(request):
 
 
 
-
-
-def ManagamentSignDoApi(request):
+#5--6、会议查询接口
+def MeetingDoApi(request):
     # {
     #     "code":"20000"
     #              "flag":"true"
@@ -541,12 +545,95 @@ def ManagamentSignDoApi(request):
     # }
     if request.method == "POST":
         code = request.POST.get('code')
-        #time = request.POST.get('time')  #请求参数里面包含time  格式不对
-        location = request.POST.get('location')
+        userid = request.POST.get('user_id')
+
+
+        m = Meeting.objects.filter(meetinguserrelation__user_id=userid).values('meetinguserrelation__meeting_id','theme')
+
+
+
+
+
+        response = {}
+        response['message'] = '签到成功'
+        response['flag'] = 'true'
+        response['code'] = 20000
+        response['data'] = list(m)
+
+        return HttpResponse(json.dumps(response), content_type="application/json")
+
+    else:
+
+        return HttpResponse("请用post方式访问")
+
+
+
+
+
+#5--7、会议签到显示二维码接口（前端生成）
+def ManagamentShowtoDoApi(request):
+    # {
+    #     "code":"20000"
+    #              "flag":"true"
+    #                    "message":"签到成功"
+    #                           "data":{
+    #              'is succeed':1
+    # }
+    if request.method == "POST":
+        code = request.POST.get('code')
         meetingid = request.POST.get('meeting_id')
 
-        userid = UserInfo.objects.filter(code=code)
-        m = Meeting.objects.filter(meetinguserrelation__user_id=userid[0].id,place=location,id=meetingid)
+        m = Meeting.objects.filter(id=meetingid)
+        m_v =[str(m[0].id )+ str(m[0].sponsor )+str(m[0].time)+str(m[0].theme)+str(m[0].place)+str(m[0].ratifier_id)]
+        rad1 = ''.join(random.sample(string.ascii_letters + string.digits, 8))
+        rad2 = ''.join(random.sample(string.ascii_letters + string.digits, 4))
+        st = [rad1+m_v[0]+rad2]
+
+        response = {}
+        if m.exists() :
+
+            response['message'] = '签到成功'
+            response['flag'] = 'true'
+            response['code'] = 20000
+            data = {'string':st[0]
+
+                    }
+
+        else:
+            response['message'] = '签到失败'
+            response['flag'] = 'flase'
+            response['code'] = 40000
+            data = {}
+
+        response['data'] = data
+
+        return HttpResponse(json.dumps(response), content_type="application/json")
+
+    else:
+
+        return HttpResponse("请用post方式访问")
+
+
+
+
+#5--8、会议签到用户扫码接口
+def ManagamentShowinDoApi(request):
+    # {
+    #     "code":"20000"
+    #              "flag":"true"
+    #                    "message":"签到成功"
+    #                           "data":{
+    #              'is succeed':1
+    # }
+    if request.method == "POST":
+        code = request.POST.get('code')
+        vxcode = request.POST.get('vx_code')
+        #time = request.POST.get('time')  #请求参数里面包含time  格式不对
+        place = request.POST.get('place')
+        meetingid = request.POST.get('meeting_id')
+
+        userid = UserInfo.objects.filter(vx_code=vxcode)
+        m = Meeting.objects.filter(meetinguserrelation__user_id=userid[0].id,place=place,id=meetingid)#time=time
 
 
 
