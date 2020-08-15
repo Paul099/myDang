@@ -12,7 +12,7 @@ urlpatterns = [
     path('webname/managament_specific.do', views.ManagamentSpecificDoApi),
     path('webname/managament_add.do', views.ManagamentAddDoApi),
     path('webname/managament_invite.do', views.ManagamentInviteDoApi),
-    path('webname/meeting.do', views.MeetingDoApi),
+    path('webname/managament_query.do', views.ManagamentQueryDoApi),
     path('webname/managament_showto.do', views.ManagamentShowtoDoApi),
     path('webname/managament_showin.do',views.ManagamentShowinDoApi)
 

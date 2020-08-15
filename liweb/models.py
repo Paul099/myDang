@@ -77,6 +77,15 @@ class Department(models.Model):
         managed = False
         db_table = 'department'
 
+# class Department(models.Model):
+#     name = models.CharField(max_length=255, blank=True, null=True)
+#     pid = models.IntegerField(blank=True, null=True)
+#
+#     class Meta:
+#         managed = False
+#         db_table = 'department'
+
+
 
 class DjangoAdminLog(models.Model):
     action_time = models.DateTimeField()

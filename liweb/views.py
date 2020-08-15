@@ -280,8 +280,8 @@ def ManagamentInquireDoApi(request):
     if request.method == "POST":
         userid = request.POST.get('user_id')
         code= request.POST.get('code')
-        departmentid=request.POST.get('department_id')
-        taskstateid=request.POST.get('state_id')
+        departmentid= request.POST.get('department_id')
+        taskstateid= request.POST.get('state_id')
         t = Task.objects.filter(taskuserrelation__user_id=userid, state_id=taskstateid, department_id=departmentid)
         u = UserInfo.objects.filter(taskuserrelation__task__state_id=taskstateid, department_id=departmentid, id=userid)
         mu = MeetingUserRelation.objects.filter(user_id=u[0].id)
@@ -501,15 +501,20 @@ def ManagamentInviteDoApi(request):
         meetingid = request.POST.get('meeting_id')
         userid = request.POST.get('user_id')
 
-        v = MeetingUserRelation.objects.get(user_id=userid)
-        v.meeting_id = meetingid
-        v.save()
-
-
+        mu =MeetingUserRelation.objects.filter(user_id=userid,meeting_id=meetingid)
 
         response = {}
-        if v.meeting_id ==meetingid :
+        if  mu.exists() :
 
+            response['message'] = '该用户已被邀请'
+            response['flag'] = 'flase'
+            response['code'] = 40000
+            data = {}
+
+        else :
+
+            m = MeetingUserRelation(user_id=userid, meeting_id=meetingid)
+            m.save()
             response['message'] = '邀请成功'
             response['flag'] = 'true'
             response['code'] = 20000
@@ -517,11 +522,6 @@ def ManagamentInviteDoApi(request):
 
                     }
 
-        else:
-            response['message'] = '用户不存在'
-            response['flag'] = 'flase'
-            response['code'] = 40000
-            data = {}
 
         response['data'] = data
 
@@ -535,7 +535,7 @@ def ManagamentInviteDoApi(request):
 
 
 #5--6、会议查询接口
-def MeetingDoApi(request):
+def ManagamentQueryDoApi(request):
     # {
     #     "code":"20000"
     #              "flag":"true"
