@@ -76,6 +76,8 @@ WSGI_APPLICATION = 'myDang.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/2.2/ref/settings/#databases
 
+
+#连接数据库
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
@@ -88,6 +90,30 @@ DATABASES = {
         'COLLATION':'utf8_general_ci'
     }
 }
+
+#尝试连接本地mySQL
+# DATABASES = {
+#
+#     'default': {
+#
+#         'ENGINE':'django.db.backends.mysql',  # 使用mysql数据库的都是这个，不变
+#
+#         'NAME': 'messi',  # 使用的数据库名称
+#
+#         'USER':'root',  # 登录mysql数据库的用户名称
+#
+#         'PASSWORD':'root',  # 登录mysql数据库的用户密码
+#
+#         'HOST':'localhost',  # 表明使用的是本地mysql数据库
+#
+#         'PORT':'3306',  # 端口号
+#
+#     }
+#
+# }
+
+
+
 
 
 # Password validation

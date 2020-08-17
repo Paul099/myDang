@@ -122,10 +122,12 @@ def ResponsLibitylistDoApi(request):
         userid = request.POST.get('user_id')
         code = request.POST.get('code')
         u = UserInfo.objects.filter(id=userid)
-        p_o = PartyBranch.objects.filter(id=u[0].partyuserrelation_set.first().party_branch.id)
+        #p_o = PartyBranch.objects.filter(id=u[0].partyuserrelation_set.first().party_branch.id)
+        p_o = ObservationList.objects.filter(obserpartyrelation__party__id=u[0].partyuserrelation_set.first().party_branch.id)
         p_r = RespDepRelation.objects.filter(department_id=u[0].department.id)#part_resp 的问题没有解决
         d = Department.objects.filter(id=u[0].department.id)
         r = RoleInfo.objects.filter(id=u[0].roleuserrelation_set.first().role.id)
+
 
         response = {}
         if u.exists():
@@ -135,10 +137,11 @@ def ResponsLibitylistDoApi(request):
             response['code'] = 20000
             data = {'party_branch': u[0].partyuserrelation_set.first().party_branch.party_branch,
                     'par_resp': p_r[0].resp.content,
-                    'par_obs': p_o[0].obserpartyrelation_set.first().observation.observation_point,
+                    'par_obs': p_o[0].observation_point,
                     'department':d[0].name,
                     'dep_resp':d[0].respdeprelation_set.first().resp.content,
                     'dep_obs':r[0].obserrolerelation_set.first().observation.observation_point,#连续跨表的department--obser?????
+
                     }
 
         else:
@@ -374,7 +377,7 @@ def ManagamentSpecificDoApi(request):
                     'type':t[0].type.type,
                     'state':t[0].state.state,
                     'tz_user':list(u.values_list('user_name')),
-                    'cj_user':list(u.filter(meetinguserrelation__answer=1).values_list('user_name')),
+                    'cj_user': list(u.filter(meetinguserrelation__answer=1).values_list('user_name')),
                     'qj_user':list(u.filter(meetinguserrelation__answer=2).values_list('user_name')),#存在bug，answer=2的筛选不出？？？？
                     'answer':mu[0].answer.answer,
                     'content':t[0].content,
@@ -584,7 +587,7 @@ def ManagamentShowtoDoApi(request):
         meetingid = request.POST.get('meeting_id')
 
         m = Meeting.objects.filter(id=meetingid)
-        m_v =[str(m[0].id )+ str(m[0].sponsor )+str(m[0].time)+str(m[0].theme)+str(m[0].place)+str(m[0].ratifier_id)]
+        m_v =[str(m[0].id )+ str(m[0].sponsor )+str(m[0].time)+str(m[0].theme)+str(m[0].place)+str(m[0].ratifier_field_id)]
         rad1 = ''.join(random.sample(string.ascii_letters + string.digits, 8))
         rad2 = ''.join(random.sample(string.ascii_letters + string.digits, 4))
         st = [rad1+m_v[0]+rad2]
@@ -592,7 +595,7 @@ def ManagamentShowtoDoApi(request):
         response = {}
         if m.exists() :
 
-            response['message'] = '签到成功'
+            response['message'] = '二维码获取成功'
             response['flag'] = 'true'
             response['code'] = 20000
             data = {'string':st[0]
@@ -600,7 +603,7 @@ def ManagamentShowtoDoApi(request):
                     }
 
         else:
-            response['message'] = '签到失败'
+            response['message'] = '二维码获取失败'
             response['flag'] = 'flase'
             response['code'] = 40000
             data = {}
