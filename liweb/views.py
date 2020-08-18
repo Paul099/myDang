@@ -378,12 +378,10 @@ def ManagamentSpecificDoApi(request):
                     'state':t[0].state.state,
                     'tz_user':list(u.values_list('user_name')),
                     'cj_user': list(u.filter(meetinguserrelation__answer=1).values_list('user_name')),
-                    'qj_user':list(u.filter(meetinguserrelation__answer=2).values_list('user_name')),#存在bug，answer=2的筛选不出？？？？
+                    'qj_user':list(u.exclude(meetinguserrelation__answer=1).values_list('user_name')),#存在bug，answer=2的筛选不出？？？？
                     'answer':mu[0].answer.answer,
                     'content':t[0].content,
-
                     }
-
         else:
             response['message'] = '查询失败'
             response['flag'] = 'flase'
@@ -414,21 +412,21 @@ def ManagamentAddDoApi(request):
         code = request.POST.get('code')
         theme = request.POST.get('theme')
         department = request.POST.get('department')
-        #time = request.POST.get('time')#时间作为请求参数
+        time = request.POST.get('time')#时间作为请求参数？？？？
         place = request.POST.get('place')
         sponsor = request.POST.get('sponsor')
         type = request.POST.get('type')
         state =request.POST.get('state')
         userid = request.POST.get('user_id')
-        content = request.POST.get('content')#对于存在的id可能无法添加？？？？
+        content = request.POST.get('content')
         response = {}
 
         d_idmax = Department.objects.aggregate(idmax=Max('id'))
         d = Department.objects.create(id =d_idmax['idmax']+1,name=department)
-        d.save()
+        d.save()#优化保存的时间，可以放在if函数里？？？？？
 
         m_idmax = Meeting.objects.aggregate(idmax=Max('id'))
-        m = Meeting.objects.create(id=m_idmax['idmax']+1,theme=theme,place=place,sponsor =sponsor,)#time=time,)
+        m = Meeting.objects.create(id=m_idmax['idmax']+1,theme=theme,place=place,sponsor =sponsor,time=time,)
         m.save()
 
         u = UserInfo.objects.create(id = userid,department_id=d_idmax['idmax']+1)
