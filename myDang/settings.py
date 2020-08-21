@@ -91,26 +91,6 @@ DATABASES = {
     }
 }
 
-#尝试连接本地mySQL
-# DATABASES = {
-#
-#     'default': {
-#
-#         'ENGINE':'django.db.backends.mysql',  # 使用mysql数据库的都是这个，不变
-#
-#         'NAME': 'messi',  # 使用的数据库名称
-#
-#         'USER':'root',  # 登录mysql数据库的用户名称
-#
-#         'PASSWORD':'root',  # 登录mysql数据库的用户密码
-#
-#         'HOST':'localhost',  # 表明使用的是本地mysql数据库
-#
-#         'PORT':'3306',  # 端口号
-#
-#     }
-#
-# }
 
 
 
@@ -156,4 +136,13 @@ STATIC_URL = '/static/'
 
 
 
-#AUTH_USER_MODEL = 'liweb.models'
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis://127.0.0.1:6379",
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+             "CONNECTION_POOL_KWARGS": {"max_connections": 100}
+        }
+    }
+}
