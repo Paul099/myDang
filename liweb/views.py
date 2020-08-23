@@ -17,6 +17,7 @@ import hashlib
 from django.core.cache import cache
 from django_redis import get_redis_connection
 import redis
+from django.utils import timezone
 
 
 
@@ -477,7 +478,7 @@ def ManagamentSpecificDoApi(request):
                         'state':t[0].state.state,
                         'tz_user':list(u.values_list('user_name')),
                         'cj_user': list(u.filter(meetinguserrelation__answer=1).values_list('user_name')),
-                        'qj_user':list(u.exclude(meetinguserrelation__answer=1).values_list('user_name')),#存在bug，answer=2的筛选不出？？？？
+                        'qj_user':list(u.exclude(meetinguserrelation__answer=1).values_list('user_name')),
                         'answer':mu[0].answer.answer,
                         'content':t[0].content,
                         }
@@ -753,12 +754,12 @@ def ManagamentShowinDoApi(request):
 
             code = request.POST.get('code')
             vxcode = request.POST.get('vx_code')
-            #time = request.POST.get('time')  #请求参数里面包含time  格式不对
             place = request.POST.get('place')
             meetingid = request.POST.get('meeting_id')
+            time = timezone.localtime()  #请求参数里面包含time  格式不对
 
             userid = UserInfo.objects.filter(vx_code=vxcode)
-            m = Meeting.objects.filter(meetinguserrelation__user_id=userid[0].id,place=place,id=meetingid)#time=time
+            m = Meeting.objects.filter(meetinguserrelation__user_id=userid[0].id,place=place,id=meetingid,time__gte=time)
 
 
 
