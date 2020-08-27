@@ -149,11 +149,11 @@ def ResponslibityDoApi(request):
                 response['message']='查询成功'
                 response['flag'] = 'true'
                 response['code'] = 20000
-                data = {'role': u[0].roleuserrelation_set.first().role.role,#一个user_id对应多个role时无法显示？？？？？？？
+                data = {'role': u[0].roleuserrelation_set.first().role.role,
                         'role_resp_num':r[0].resprolerelation_set.count(),
                         'role_obs_num':r[0].obserrolerelation_set.count(),
                         'party_branch':u[0].partyuserrelation_set.first().party_branch.party_branch,
-                        'par_resp_num':p[0].partyuserrelation_set.count(),#没有Part_resp_relation表，无法明确确定党组织责任？？？？？
+                        'par_resp_num':r[0].resprolerelation_set.count(),
                         'par_obs_num':p[0].obserpartyrelation_set.count(),
                         }
 
@@ -167,7 +167,7 @@ def ResponslibityDoApi(request):
 
             return HttpResponse(json.dumps(response), content_type="application/json")
         else:
-            return HttpResponse(json.dumps({"message": "请登录"}), content_type="application/json")
+            return HttpResponse(json.dumps({"code":code,"message": "请登录"}), content_type="application/json")
 
    else:
 
@@ -198,9 +198,9 @@ def ResponsLibitylistDoApi(request):
 
     if request.method == "POST":
         token = request.POST.get('token')
+        code = request.POST.get('code')
         if check_token(token):
             userid = request.POST.get('user_id')
-            code = request.POST.get('code')
             u = UserInfo.objects.filter(id=userid)
             #p_o = PartyBranch.objects.filter(id=u[0].partyuserrelation_set.first().party_branch.id)
             p_o = ObservationList.objects.filter(obserpartyrelation__party__id=u[0].partyuserrelation_set.first().party_branch.id)
@@ -216,11 +216,11 @@ def ResponsLibitylistDoApi(request):
                 response['flag'] = 'true'
                 response['code'] = 20000
                 data = {'party_branch': u[0].partyuserrelation_set.first().party_branch.party_branch,
-                        'par_resp': p_r[0].resp.content,
+                        'par_resp': r[0].resprolerelation_set.first().resp.content,
                         'par_obs': p_o[0].observation_point,
                         'department':d[0].name,
                         'dep_resp':d[0].respdeprelation_set.first().resp.content,
-                        'dep_obs':r[0].obserrolerelation_set.first().observation.observation_point,#连续跨表的department--obser?????
+                        'dep_obs':r[0].obserrolerelation_set.first().observation.observation_point,
 
                         }
 
@@ -235,7 +235,7 @@ def ResponsLibitylistDoApi(request):
             return HttpResponse(json.dumps(response), content_type="application/json")
 
         else:
-            return HttpResponse(json.dumps({"message": "请登录"}), content_type="application/json")
+            return HttpResponse(json.dumps({"code":code,"message": "请登录"}), content_type="application/json")
 
     else:
 
@@ -257,13 +257,14 @@ def ResponslibitylistscDoApi(request):
     # }
     if request.method == "POST":
         token = request.POST.get('token')
+        code = request.POST.get('code')
         if check_token(token):
 
             userid = request.POST.get('user_id')
-            code= request.POST.get('code')
             u = UserInfo.objects.filter(id=userid)
+            r = RoleInfo.objects.filter(id=u[0].roleuserrelation_set.first().role.id)
             p_o = PartyBranch.objects.filter(id= u[0].partyuserrelation_set.first().party_branch.id)
-            p_r = RespDepRelation.objects.filter(department_id=u[0].department.id)
+            #p_r = RespDepRelation.objects.filter(department_id=u[0].department.id)
 
 
             response = {}
@@ -273,7 +274,7 @@ def ResponslibitylistscDoApi(request):
                 response['flag'] = 'true'
                 response['code'] = 20000
                 data = {'party_branch': u[0].partyuserrelation_set.first().party_branch.party_branch,
-                        'par_resp': p_r[0].resp.content,
+                        'par_resp': r[0].resprolerelation_set.first().resp.content,
                         'par_obs': p_o[0].obserpartyrelation_set.first().observation.observation_point,
                         }
 
@@ -287,7 +288,7 @@ def ResponslibitylistscDoApi(request):
 
             return HttpResponse(json.dumps(response), content_type="application/json")
         else:
-            return HttpResponse(json.dumps({"message":"请登录"}), content_type="application/json")
+            return HttpResponse(json.dumps({"code":code,"message": "请登录"}), content_type="application/json")
 
     else:
 
@@ -315,10 +316,10 @@ def ManagamentDoApi(request):
 
     if request.method == "POST":
         token =request.POST.get('token')
+        code = request.POST.get('code')
         if check_token(token):
 
             userid = request.POST.get('user_id')
-            code= request.POST.get('code')
             u = UserInfo.objects.filter(id=userid)
             m = MeetingUserRelation.objects.filter(user_id=userid,answer_id=None)
 
@@ -343,7 +344,7 @@ def ManagamentDoApi(request):
 
             return HttpResponse(json.dumps(response), content_type="application/json")
         else:
-            return HttpResponse(json.dumps({"message":"请登录"}), content_type="application/json")
+            return HttpResponse(json.dumps({"code":code,"message": "请登录"}), content_type="application/json")
 
 
     else:
@@ -375,33 +376,22 @@ def ManagamentInquireDoApi(request):
     # }
     if request.method == "POST":
         token = request.POST.get('token')
+        code = request.POST.get('code')
         if check_token(token):
             userid = request.POST.get('user_id')
-            code= request.POST.get('code')
             departmentid= request.POST.get('department_id')
             taskstateid= request.POST.get('state_id')
-            t = Task.objects.filter(taskuserrelation__user_id=userid, state_id=taskstateid, department_id=departmentid)
-            u = UserInfo.objects.filter(taskuserrelation__task__state_id=taskstateid, department_id=departmentid, id=userid)
-            mu = MeetingUserRelation.objects.filter(user_id=u[0].id)
-            m = Meeting.objects.filter(id=mu[0].meeting_id)
+            m_set = MeetingUserRelation.objects.filter(user_id=userid, user__task__state_id=taskstateid, user__department_id=departmentid).values('meeting_id', 'meeting__theme', 'user__department__name', 'meeting__time', 'meeting__place','meeting__sponsor', 'user__task__type__type', 'user__task__state__state', ).distinct()
 
 
 
             response = {}
-            if u.exists():
+            if m_set.exists():
 
                 response['message'] = '查询成功'
                 response['flag'] = 'true'
                 response['code'] = 20000
-                data = {'meeting_id ': m[0].id,
-                        'theme': m[0].theme,
-                        'department':u[0].department.name,
-                        'time':m[0].time,
-                        'place':m[0].place,
-                        'sponsor':m[0].sponsor,
-                        'type':t[0].type.type,
-                        'state':t[0].state.state
-                        }
+                data = m_set
 
             else:
                 response['message'] = '查询失败'
@@ -409,12 +399,12 @@ def ManagamentInquireDoApi(request):
                 response['code'] = 40000
                 data = {}
 
-            response['data'] = data
+            response['data'] = list(data)
 
             return HttpResponse(json.dumps(response,cls=CJsonEncoder), content_type="application/json")
 
         else:
-            return HttpResponse(json.dumps({"message":"请登录"}), content_type="application/json")
+            return HttpResponse(json.dumps({"code":code,"message": "请登录"}), content_type="application/json")
 
     else:
 
@@ -454,9 +444,9 @@ def ManagamentSpecificDoApi(request):
 
     if request.method == "POST":
         token = request.POST.get('token')
+        code = request.POST.get('code')
         if check_token(token):
             meetingid = request.POST.get('meeting_id')
-            code= request.POST.get('code')
             m = Meeting.objects.filter(id=meetingid)
             d =Department.objects.filter(userinfo__meetinguserrelation__meeting_id=meetingid)
             u =UserInfo.objects.filter(meetinguserrelation__meeting_id=meetingid)
@@ -492,7 +482,7 @@ def ManagamentSpecificDoApi(request):
 
             return HttpResponse(json.dumps(response,cls=CJsonEncoder), content_type="application/json")
         else:
-            return HttpResponse(json.dumps({"message":"请登录"}), content_type="application/json")
+            return HttpResponse(json.dumps({"code":code,"message": "请登录"}), content_type="application/json")
 
     else:
 
@@ -512,8 +502,9 @@ def ManagamentAddDoApi(request):
     # }
     if request.method == "POST":
         token = request.POST.get('token')
+        code = request.POST.get('code')
         if check_token(token):
-            code = request.POST.get('code')
+
             theme = request.POST.get('theme')
             department = request.POST.get('department')
             time = request.POST.get('time')#时间作为请求参数？？？？
@@ -580,7 +571,7 @@ def ManagamentAddDoApi(request):
 
             return HttpResponse(json.dumps(response,), content_type="application/json")
         else:
-            return HttpResponse(json.dumps({"message":"请登录"}), content_type="application/json")
+            return HttpResponse(json.dumps({"code":code,"message": "请登录"}), content_type="application/json")
 
     else:
 
@@ -605,9 +596,10 @@ def ManagamentInviteDoApi(request):
     # }
     if request.method == "POST":
         token = request.POST.get('token')
+        code = request.POST.get('code')
         if check_token(token):
 
-            code = request.POST.get('code')
+
             meetingid = request.POST.get('meeting_id')
             userid = request.POST.get('user_id')
 
@@ -637,7 +629,7 @@ def ManagamentInviteDoApi(request):
 
             return HttpResponse(json.dumps(response), content_type="application/json")
         else:
-            return HttpResponse(json.dumps({"message":"请登录"}), content_type="application/json")
+            return HttpResponse(json.dumps({"code":code,"message": "请登录"}), content_type="application/json")
 
     else:
 
@@ -658,9 +650,10 @@ def ManagamentQueryDoApi(request):
     # }
     if request.method == "POST":
         token = request.POST.get('token')
+        code = request.POST.get('code')
         if check_token(token):
 
-            code = request.POST.get('code')
+
             userid = request.POST.get('user_id')
 
 
@@ -678,7 +671,7 @@ def ManagamentQueryDoApi(request):
 
             return HttpResponse(json.dumps(response), content_type="application/json")
         else:
-            return HttpResponse(json.dumps({"message":"请登录"}), content_type="application/json")
+            return HttpResponse(json.dumps({"code":code,"message": "请登录"}), content_type="application/json")
 
     else:
 
@@ -699,11 +692,10 @@ def ManagamentShowtoDoApi(request):
     # }
     if request.method == "POST":
         token = request.POST.get('token')
+        code = request.POST.get('code')
         if check_token(token):
 
-            code = request.POST.get('code')
             meetingid = request.POST.get('meeting_id')
-
             m = Meeting.objects.filter(id=meetingid)
             m_v =[str(m[0].id )+ str(m[0].sponsor )+str(m[0].time)+str(m[0].theme)+str(m[0].place)+str(m[0].ratifier_field_id)]
             rad1 = ''.join(random.sample(string.ascii_letters + string.digits, 8))
@@ -730,7 +722,7 @@ def ManagamentShowtoDoApi(request):
 
             return HttpResponse(json.dumps(response), content_type="application/json")
         else:
-            return HttpResponse(json.dumps({"message":"请登录"}), content_type="application/json")
+            return HttpResponse(json.dumps({"code":code,"message": "请登录"}), content_type="application/json")
 
     else:
 
@@ -750,9 +742,8 @@ def ManagamentShowinDoApi(request):
     # }
     if request.method == "POST":
         token = request.POST.get('token')
+        code = request.POST.get('code')
         if check_token(token):
-
-            code = request.POST.get('code')
             vxcode = request.POST.get('vx_code')
             place = request.POST.get('place')
             meetingid = request.POST.get('meeting_id')
@@ -785,7 +776,7 @@ def ManagamentShowinDoApi(request):
 
             return HttpResponse(json.dumps(response), content_type="application/json")
         else:
-            return HttpResponse(json.dumps({"message":"请登录"}), content_type="application/json")
+            return HttpResponse(json.dumps({"code":code,"message": "请登录"}), content_type="application/json")
 
     else:
 
