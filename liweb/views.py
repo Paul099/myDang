@@ -380,28 +380,17 @@ def ManagamentInquireDoApi(request):
             code= request.POST.get('code')
             departmentid= request.POST.get('department_id')
             taskstateid= request.POST.get('state_id')
-            t = Task.objects.filter(taskuserrelation__user_id=userid, state_id=taskstateid, department_id=departmentid)
-            u = UserInfo.objects.filter(taskuserrelation__task__state_id=taskstateid, department_id=departmentid, id=userid)
-            mu = MeetingUserRelation.objects.filter(user_id=u[0].id)
-            m = Meeting.objects.filter(id=mu[0].meeting_id)
+            m_set = MeetingUserRelation.objects.filter(user_id=1, user__task__state_id=1, user__department_id=1).values('meeting_id', 'meeting__theme', 'user__department__name', 'meeting__time', 'meeting__place','meeting__sponsor', 'user__task__type__type', 'user__task__state__state', ).distinct()
 
 
 
             response = {}
-            if u.exists():
+            if m_set.exists():
 
                 response['message'] = '查询成功'
                 response['flag'] = 'true'
                 response['code'] = 20000
-                data = {'meeting_id ': m[0].id,
-                        'theme': m[0].theme,
-                        'department':u[0].department.name,
-                        'time':m[0].time,
-                        'place':m[0].place,
-                        'sponsor':m[0].sponsor,
-                        'type':t[0].type.type,
-                        'state':t[0].state.state
-                        }
+                data = m_set
 
             else:
                 response['message'] = '查询失败'
@@ -409,7 +398,7 @@ def ManagamentInquireDoApi(request):
                 response['code'] = 40000
                 data = {}
 
-            response['data'] = data
+            response['data'] = list(data)
 
             return HttpResponse(json.dumps(response,cls=CJsonEncoder), content_type="application/json")
 
@@ -419,10 +408,6 @@ def ManagamentInquireDoApi(request):
     else:
 
         return HttpResponse("请用post方式访问")
-
-
-
-
 
 
 
