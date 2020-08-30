@@ -1,4 +1,3 @@
-
 from django.db import models
 
 
@@ -69,7 +68,6 @@ class AuthUserUserPermissions(models.Model):
 
 
 class Department(models.Model):
-    id = models.IntegerField(primary_key=True)
     name = models.CharField(max_length=255, blank=True, null=True)
     pid = models.IntegerField(blank=True, null=True)
 
@@ -123,11 +121,10 @@ class DjangoSession(models.Model):
 
 
 class FileInfo(models.Model):
-    id = models.IntegerField(primary_key=True)
     file_type = models.CharField(max_length=255, blank=True, null=True)
     url = models.CharField(max_length=255, blank=True, null=True)
     title = models.CharField(max_length=255, blank=True, null=True)
-    time = models.DateTimeField(blank=True, null=True)
+    time = models.DateField(blank=True, null=True)
 
     class Meta:
         managed = False
@@ -135,16 +132,18 @@ class FileInfo(models.Model):
 
 
 class Meeting(models.Model):
-    id = models.IntegerField(primary_key=True)
-    sponsor = models.IntegerField(blank=True, null=True)
-    time = models.DateTimeField(blank=True, null=True)
+    sponsor = models.CharField(max_length=255, blank=True, null=True)
     theme = models.CharField(max_length=255, blank=True, null=True)
     place = models.CharField(max_length=255, blank=True, null=True)
-    ratifier_id = models.IntegerField(blank=True, null=True)
+    ratifier_field = models.ForeignKey('UserInfo', models.DO_NOTHING, db_column='ratifier\r\n_id', blank=True,
+                                       null=True)  # Field renamed to remove unsuitable characters.Fieldrenamedbecauseitendedwith '_'.
+    time = models.DateTimeField(blank=True, null=True)
 
     class Meta:
         managed = False
         db_table = 'meeting'
+
+
 
 
 class MeetingAnswer(models.Model):
@@ -156,15 +155,14 @@ class MeetingAnswer(models.Model):
 
 
 class MeetingUserRelation(models.Model):
-    id = models.IntegerField(primary_key=True)
     meeting = models.ForeignKey(Meeting, models.DO_NOTHING, blank=True, null=True)
     user = models.ForeignKey('UserInfo', models.DO_NOTHING, blank=True, null=True)
-    answer_id = models.IntegerField(blank=True, null=True)
+    answer = models.ForeignKey(MeetingAnswer, models.DO_NOTHING, blank=True, null=True)
     reason = models.CharField(max_length=255, blank=True, null=True)
-    answer = models.CharField(max_length=255, blank=True, null=True)
+    answer_0 = models.IntegerField(db_column='answer', blank=True, null=True)  # Field renamed because of name conflict.
     answer_remake = models.CharField(max_length=255, blank=True, null=True)
     is_sign = models.IntegerField(blank=True, null=True)
-    time_sign = models.DateTimeField(blank=True, null=True)
+    time_sign = models.TimeField(blank=True, null=True)
     place_sign = models.CharField(max_length=255, blank=True, null=True)
 
     class Meta:
@@ -173,7 +171,6 @@ class MeetingUserRelation(models.Model):
 
 
 class ObserPartyRelation(models.Model):
-    id = models.IntegerField(primary_key=True)
     observation = models.ForeignKey('ObservationList', models.DO_NOTHING, blank=True, null=True)
     party = models.ForeignKey('PartyBranch', models.DO_NOTHING, blank=True, null=True)
 
@@ -183,9 +180,8 @@ class ObserPartyRelation(models.Model):
 
 
 class ObserRoleRelation(models.Model):
-    id = models.IntegerField(primary_key=True)
     observation = models.ForeignKey('ObservationList', models.DO_NOTHING, blank=True, null=True)
-    role_id = models.IntegerField(blank=True, null=True)
+    role = models.ForeignKey('RoleInfo', models.DO_NOTHING, blank=True, null=True)
 
     class Meta:
         managed = False
@@ -193,7 +189,6 @@ class ObserRoleRelation(models.Model):
 
 
 class ObservationList(models.Model):
-    id = models.IntegerField(primary_key=True)
     observation_point = models.CharField(max_length=255, blank=True, null=True)
     pid = models.IntegerField(blank=True, null=True)
 
@@ -212,7 +207,6 @@ class PartyBranch(models.Model):
 
 
 class PartyUserRelation(models.Model):
-    id = models.IntegerField(primary_key=True)
     user = models.ForeignKey('UserInfo', models.DO_NOTHING, blank=True, null=True)
     party_branch = models.ForeignKey(PartyBranch, models.DO_NOTHING, blank=True, null=True)
 
@@ -222,7 +216,6 @@ class PartyUserRelation(models.Model):
 
 
 class ProgressType(models.Model):
-    id = models.IntegerField(primary_key=True)
     progress_type = models.CharField(max_length=255, blank=True, null=True)
 
     class Meta:
@@ -231,9 +224,8 @@ class ProgressType(models.Model):
 
 
 class RespDepRelation(models.Model):
-    id = models.IntegerField(primary_key=True)
     resp = models.ForeignKey('RespList', models.DO_NOTHING, blank=True, null=True)
-    department = models.ForeignKey('Department', models.DO_NOTHING, blank=True, null=True)
+    department = models.ForeignKey(Department, models.DO_NOTHING, blank=True, null=True)
 
     class Meta:
         managed = False
@@ -241,7 +233,6 @@ class RespDepRelation(models.Model):
 
 
 class RespList(models.Model):
-    id = models.IntegerField(primary_key=True)
     content = models.CharField(max_length=255, blank=True, null=True)
     pid = models.IntegerField(blank=True, null=True)
 
@@ -251,7 +242,6 @@ class RespList(models.Model):
 
 
 class RespRoleRelation(models.Model):
-    id = models.IntegerField(primary_key=True)
     resp = models.ForeignKey(RespList, models.DO_NOTHING, blank=True, null=True)
     role = models.ForeignKey('RoleInfo', models.DO_NOTHING, blank=True, null=True)
 
@@ -261,7 +251,6 @@ class RespRoleRelation(models.Model):
 
 
 class RoleInfo(models.Model):
-    id = models.IntegerField(primary_key=True)
     role = models.CharField(max_length=255, blank=True, null=True)
 
     class Meta:
@@ -270,7 +259,6 @@ class RoleInfo(models.Model):
 
 
 class RoleUserRelation(models.Model):
-    id = models.IntegerField(primary_key=True)
     user = models.ForeignKey('UserInfo', models.DO_NOTHING, blank=True, null=True)
     role = models.ForeignKey(RoleInfo, models.DO_NOTHING, blank=True, null=True)
 
@@ -280,18 +268,17 @@ class RoleUserRelation(models.Model):
 
 
 class Task(models.Model):
-    id = models.IntegerField(primary_key=True)
     content = models.CharField(max_length=255, blank=True, null=True)
     pid = models.IntegerField(blank=True, null=True)
-    department_id = models.IntegerField(blank=True, null=True)
+    department = models.ForeignKey(Department, models.DO_NOTHING, blank=True, null=True)
     state = models.ForeignKey('TaskState', models.DO_NOTHING, blank=True, null=True)
     source = models.ForeignKey('TaskSource', models.DO_NOTHING, blank=True, null=True)
     type = models.ForeignKey('TaskType', models.DO_NOTHING, blank=True, null=True)
     priority = models.ForeignKey('TaskPriority', models.DO_NOTHING, blank=True, null=True)
     progress = models.IntegerField(blank=True, null=True)
     appointor = models.ForeignKey('UserInfo', models.DO_NOTHING, blank=True, null=True)
-    end_time = models.DateTimeField(blank=True, null=True)
-    start_time = models.DateTimeField(blank=True, null=True)
+    end_time = models.DateField(blank=True, null=True)
+    start_time = models.DateField(blank=True, null=True)
     title = models.CharField(max_length=255, blank=True, null=True)
 
     class Meta:
@@ -300,7 +287,6 @@ class Task(models.Model):
 
 
 class TaskAnnex(models.Model):
-    id = models.IntegerField(primary_key=True)
     annex_url = models.CharField(max_length=255, blank=True, null=True)
 
     class Meta:
@@ -309,9 +295,8 @@ class TaskAnnex(models.Model):
 
 
 class TaskJurisdiction(models.Model):
-    id = models.IntegerField(primary_key=True)
-    user = models.ForeignKey('UserInfo', models.DO_NOTHING, blank=True, null=True)
-    department = models.ForeignKey(Department, models.DO_NOTHING, blank=True, null=True)
+    user_id = models.IntegerField(blank=True, null=True)
+    department_id = models.IntegerField(blank=True, null=True)
 
     class Meta:
         managed = False
@@ -319,12 +304,11 @@ class TaskJurisdiction(models.Model):
 
 
 class TaskMessRecord(models.Model):
-    id = models.IntegerField(primary_key=True)
     task = models.ForeignKey(Task, models.DO_NOTHING, blank=True, null=True)
-    oper_user = models.ForeignKey('UserInfo', models.DO_NOTHING, blank=True, null=True,related_name="oper")
-    noti_user = models.ForeignKey('UserInfo', models.DO_NOTHING, blank=True, null=True,related_name="noti")
+    oper_user = models.ForeignKey('UserInfo', models.DO_NOTHING, blank=True, null=True,related_name='noti')
+    noti_user = models.ForeignKey('UserInfo', models.DO_NOTHING, blank=True, null=True,related_name='oper')
+    type = models.IntegerField(blank=True, null=True)
     time = models.DateTimeField(blank=True, null=True)
-    type = models.CharField(max_length=255, blank=True, null=True)
 
     class Meta:
         managed = False
@@ -332,7 +316,6 @@ class TaskMessRecord(models.Model):
 
 
 class TaskPriority(models.Model):
-    id = models.IntegerField(primary_key=True)
     priority = models.CharField(max_length=255, blank=True, null=True)
 
     class Meta:
@@ -341,12 +324,11 @@ class TaskPriority(models.Model):
 
 
 class TaskProgRecord(models.Model):
-    id = models.IntegerField(primary_key=True)
     task = models.ForeignKey(Task, models.DO_NOTHING, blank=True, null=True)
     user = models.ForeignKey('UserInfo', models.DO_NOTHING, blank=True, null=True)
     progress_type = models.ForeignKey(ProgressType, models.DO_NOTHING, blank=True, null=True)
-    time = models.DateTimeField(blank=True, null=True)
     annex = models.ForeignKey(TaskAnnex, models.DO_NOTHING, blank=True, null=True)
+    time = models.DateTimeField(blank=True, null=True)
 
     class Meta:
         managed = False
@@ -354,7 +336,6 @@ class TaskProgRecord(models.Model):
 
 
 class TaskSource(models.Model):
-    id = models.IntegerField(primary_key=True)
     source = models.CharField(max_length=255, blank=True, null=True)
 
     class Meta:
@@ -363,7 +344,6 @@ class TaskSource(models.Model):
 
 
 class TaskState(models.Model):
-    id = models.IntegerField(primary_key=True)
     state = models.CharField(max_length=255, blank=True, null=True)
 
     class Meta:
@@ -372,7 +352,6 @@ class TaskState(models.Model):
 
 
 class TaskType(models.Model):
-    id = models.IntegerField(primary_key=True)
     type = models.CharField(max_length=255, blank=True, null=True)
 
     class Meta:
@@ -381,7 +360,6 @@ class TaskType(models.Model):
 
 
 class TaskUserRelation(models.Model):
-    id = models.IntegerField(primary_key=True)
     user = models.ForeignKey('UserInfo', models.DO_NOTHING, blank=True, null=True)
     task = models.ForeignKey(Task, models.DO_NOTHING, blank=True, null=True)
 
@@ -391,14 +369,13 @@ class TaskUserRelation(models.Model):
 
 
 class UserInfo(models.Model):
-    id = models.IntegerField(primary_key=True)
     department = models.ForeignKey(Department, models.DO_NOTHING, blank=True, null=True)
     user_name = models.CharField(max_length=255, blank=True, null=True)
     password = models.CharField(max_length=255, blank=True, null=True)
     job_id = models.IntegerField(blank=True, null=True)
     is_ratifier = models.IntegerField(blank=True, null=True)
+    vx_code = models.CharField(max_length=255, blank=True, null=True)
 
     class Meta:
         managed = False
         db_table = 'user_info'
-
