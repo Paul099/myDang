@@ -138,6 +138,10 @@ class Meeting(models.Model):
     ratifier_field = models.ForeignKey('UserInfo', models.DO_NOTHING, db_column='ratifier\r\n_id', blank=True, null=True,related_name='ratifier')  # Field renamed to remove unsuitable characters. Field renamed because it ended with '_'.
     time = models.DateTimeField(blank=True, null=True)
     meeting_type = models.ForeignKey('MeetingType', models.DO_NOTHING, blank=True, null=True)
+    state_id = models.IntegerField(blank=True, null=True)
+    content = models.CharField(max_length=255, blank=True, null=True)
+    department = models.ForeignKey(Department, models.DO_NOTHING, blank=True, null=True)
+
 
     class Meta:
         managed = False

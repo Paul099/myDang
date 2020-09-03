@@ -137,7 +137,7 @@ def ResponslibityDoApi(request):
         userid = request.POST.get('user_id')
         code = request.POST.get('code')
         if check_token(token):
-            current_page_num = request.POST.get('page')
+            #current_page_num = request.POST.get('page')
             u= UserInfo.objects.filter(id=userid)
             r= RoleInfo.objects.filter(id=u[0].roleuserrelation_set.first().role.id)
             p= PartyBranch.objects.filter(id=u[0].partyuserrelation_set.first().party_branch.id)
@@ -161,10 +161,10 @@ def ResponslibityDoApi(request):
                 data = {}
 
 
-            paginator = Paginator(data, 5)#预计实现分页#参数1返回的数据，参数2每页数据数
-            page_x = paginator.page(1)
-            response['total'] = paginator.count
-            response['data'] = page_x.object_list#list(data)
+            # paginator = Paginator(data, 5)#预计实现分页#参数1返回的数据，参数2每页数据数
+            # page_x = paginator.page(1)
+            # response['total'] = paginator.count
+            # response['data'] = page_x.object_list#list(data)
 
 
             response['data'] =data
@@ -203,7 +203,7 @@ def ResponsLibitylistDoApi(request):
         token = request.POST.get('token')
         code = request.POST.get('code')
         if check_token(token):
-            current_page_num = request.POST.get('page')
+            #current_page_num = request.POST.get('page')
             userid = request.POST.get('user_id')
 
             u = UserInfo.objects.filter(id=userid)
@@ -257,7 +257,7 @@ def ResponslibitylistscDoApi(request):
         token = request.POST.get('token')
         code = request.POST.get('code')
         if check_token(token):
-            current_page_num = request.POST.get('page')
+            #current_page_num = request.POST.get('page')
             userid = request.POST.get('user_id')
             u = UserInfo.objects.filter(id=userid)
             p_o = PartyBranch.objects.filter(id= u[0].partyuserrelation_set.first().party_branch.id)
@@ -312,7 +312,7 @@ def ManagamentDoApi(request):
         token =request.POST.get('token')
         code = request.POST.get('code')
         if check_token(token):
-            current_page_num = request.POST.get('page')
+            #current_page_num = request.POST.get('page')
             userid = request.POST.get('user_id')
             u = UserInfo.objects.filter(id=userid)
             m = MeetingUserRelation.objects.filter(user_id=userid,answer_id=None)
@@ -372,9 +372,10 @@ def ManagamentInquireDoApi(request):
             current_page_num = request.POST.get('page')
             userid = request.POST.get('user_id')
             departmentid= request.POST.get('department_id')
-            taskstateid= request.POST.get('state_id')
+            #taskstateid= request.POST.get('state_id')
+            stateid = request.POST.get('state_id')
             m_set = MeetingUserRelation.objects.filter(user_id=userid,
-                                                       user__task__state_id=taskstateid,
+                                                       meeting__state_id=stateid,
                                                        user__department_id=departmentid).values('meeting_id',
                                                                                                 'meeting__theme',
                                                                                                 'user__department__name',
@@ -382,23 +383,28 @@ def ManagamentInquireDoApi(request):
                                                                                                 'meeting__place',
                                                                                                 'meeting__sponsor__user_name', #因为sponsor修改为user的外键，需要跨表查询名字
                                                                                                 'meeting__meeting_type__meeting_type',#添加了type表，需要查询跨表
-                                                                                                'user__task__state__state',
+                                                                                                'meeting__state_id',
                                                                                                 ).distinct()
-            response = {}
+            paginator = Paginator(m_set,5)
+            total = paginator.count
+            page_x = paginator.page(number=current_page_num).object_list# current_page_num
+
             if m_set.exists():
-
-                response['message'] = '查询成功'
-                response['flag'] = 'true'
-                response['code'] = 20000
-                data = m_set
-
+              response = {
+                    "code": "20000",
+                    "flag": "true",
+                    "message": "查询成功",
+                    "total": total,
+                    "data": list(page_x)#(page_x.object_list)
+                }
             else:
-                response['message'] = '查询失败'
-                response['flag'] = 'flase'
-                response['code'] = 40000
-                data = {}
+                response = {
+                    "code": "20000",
+                    "flag": "true",
+                    "message": "查询成功",
+                    "data": {}
+                }
 
-            response['data'] = list(data)
             return HttpResponse(json.dumps(response,cls=CJsonEncoder), content_type="application/json")
 
         else:
@@ -444,10 +450,19 @@ def ManagamentSpecificDoApi(request):
             meetingid = request.POST.get('meeting_id')
 
             m = Meeting.objects.filter(id=meetingid)
-            d =Department.objects.filter(userinfo__meetinguserrelation__meeting_id=meetingid)
+            #d =Department.objects.filter(userinfo__meetinguserrelation__meeting_id=meetingid)
             u =UserInfo.objects.filter(meetinguserrelation__meeting_id=meetingid)
-            t =Task.objects.filter(taskuserrelation__user_id=u[0].id)
             mu =MeetingUserRelation.objects.filter(meeting_id=meetingid)
+
+           # # m = Meeting.objects.filter(id= meetingid).values('department_id',
+           #                                                   'theme',
+           #                                                   'department__department__name',
+           #                                                   'time',
+           #                                                   'place',
+           #                                                   'sponsor__user_name',
+           #                                                   'meeting_type__meeting_type',
+           #                                                   'state_id',
+           #                                                   'content')
             response = {}
             if m.exists():
 
@@ -456,17 +471,17 @@ def ManagamentSpecificDoApi(request):
                 response['code'] = 20000
                 data = {'meeting_id': m[0].id,
                         'theme':m[0].theme,
-                        'department':d[0].name,
+                        'department':m[0].department.name,
                         'time':m[0].time,
                         'place':m[0].place,
                         'sponsor':m[0].sponsor.user_name,#修改了sponsor的查询方式
-                        'type':t[0].type.type,
-                        'state':t[0].state.state,
+                        'type':m[0].meeting_type.meeting_type,
+                        'state':m[0].state_id,
                         'tz_user':list(u.values_list('user_name')),
                         'cj_user': list(u.filter(meetinguserrelation__answer=1).values_list('user_name')),
                         'qj_user':list(u.exclude(meetinguserrelation__answer=1).values_list('user_name')),
                         'answer':mu[0].answer.answer,
-                        'content':t[0].content,
+                        'content':m[0].content,
                         }
             else:
                 response['message'] = '查询失败'
@@ -501,39 +516,40 @@ def ManagamentAddDoApi(request):
         if check_token(token):
             current_page_num = request.POST.get('page')
             theme = request.POST.get('theme')
-            department = request.POST.get('department')
-            time = request.POST.get('time')#时间作为请求参数？？？？
+            department = request.POST.get('department_id')
+            time = request.POST.get('time')
             place = request.POST.get('place')
             sponsor = request.POST.get('sponsor')
             type = request.POST.get('type')
-            state =request.POST.get('state')
+            stateid =request.POST.get('state_id')#########
             userid = request.POST.get('user_id')
-            content = request.POST.get('content')
+            content = request.POST.get('content')######
 
             #d_idmax = Department.objects.aggregate(idmax=Max('id'))
             #d = Department.objects.create(id =d_idmax['idmax']+1,name=department)
-            d = Department.objects.create( name=department)
-            d.save()
-            m = Meeting.objects.create( theme=theme, place=place, sponsor_id=sponsor, time=time, )
-            m.save()
-            u = UserInfo.objects.create(id = userid,department_id=d.id)
-            u.save()
-            tt = TaskType.objects.create( type=type)
-            tt.save()
-            ts = TaskState.objects.create(state=state)
-            ts.save()
-            t = Task.objects.create( content=content, state_id=ts.id,type_id=tt.id)
-            t.save()
-            um = MeetingUserRelation.objects.create( meeting_id=m.id,user_id=userid)
-            um.save()
+            # d = Department.objects.create( name=department)
+            # d.save()
+            m_t = MeetingType.objects.create(meeting_type=type)
+            m_t.save()
+            m = Meeting.objects.create( theme=theme,
+                                        department_id=department,
+                                        time=time,
+                                        place=place,
+                                        sponsor_id=sponsor,
+                                        meeting_type_id=m_t.meeting_type_id,
+                                        state_id=stateid,
+                                        content=content ,
+                                        )
+            #u = UserInfo.objects.create(id = userid,department_id=d.id)
+            #u.save()
 
-            ut_start = TaskUserRelation.objects.count()
-            ut = TaskUserRelation.objects.create( task_id=t.id, user_id=userid)
-            ut.save()
-            ut_end =TaskUserRelation.objects.count()
+            mu_start = MeetingUserRelation.objects.count()
+            mu = MeetingUserRelation.objects.create( meeting_id=m.id,user_id=userid)
+            mu.save()
+            mu_end = MeetingUserRelation.objects.count()
 
             response = {}
-            if ut_start <ut_end:
+            if mu_start <mu_end:
 
                 response['message'] = '添加成功'
                 response['flag'] = 'true'
@@ -627,12 +643,25 @@ def ManagamentQueryDoApi(request):
             userid = request.POST.get('user_id')
 
             m = Meeting.objects.filter(meetinguserrelation__user_id=userid).values('meetinguserrelation__meeting_id','theme')
+            paginator = Paginator(m,5)
+            total = paginator.count
+            page_x = paginator.page(number=current_page_num).object_list# current_page_num
 
-            response = {}
-            response['message'] = '签到成功'
-            response['flag'] = 'true'
-            response['code'] = 20000
-            response['data'] = list(m)
+            if m.exists():
+              response = {
+                    "code": "20000",
+                    "flag": "true",
+                    "message": "查询成功",
+                    "total": total,
+                    "data": list(page_x)#(page_x.object_list)
+                }
+            else:
+                response = {
+                    "code": "20000",
+                    "flag": "true",
+                    "message": "查询成功",
+                    "data": {}
+                }
 
             return HttpResponse(json.dumps(response), content_type="application/json")
 
@@ -710,7 +739,7 @@ def ManagamentShowinDoApi(request):
         code = request.POST.get('code')
         if check_token(token):
 
-            current_page_num = request.POST.get('page')
+            #current_page_num = request.POST.get('page')
             vxcode = request.POST.get('vx_code')
             place = request.POST.get('place')
             meetingid = request.POST.get('meeting_id')
@@ -820,22 +849,25 @@ def ManagamentTypeDoApi(request):
         if check_token(token):
             current_page_num = request.POST.get('page')
             m_t = MeetingType.objects.values('meeting_type_id','meeting_type')
+            paginator = Paginator(m_t,5)
+            total = paginator.count
+            page_x = paginator.page(number=current_page_num).object_list# current_page_num
 
-            response = {}
-            if m_t.exists() :
-
-                response['message'] = '查询成功'
-                response['flag'] = 'true'
-                response['code'] = 20000
-                data = m_t
-
+            if m_t.exists():
+              response = {
+                    "code": "20000",
+                    "flag": "true",
+                    "message": "查询成功",
+                    "total": total,
+                    "data": list(page_x)#(page_x.object_list)
+                }
             else:
-                response['message'] = '查询失败'
-                response['flag'] = 'flase'
-                response['code'] = 40000
-                data = {}
-
-            response['data'] = list(m_t)
+                response = {
+                    "code": "20000",
+                    "flag": "true",
+                    "message": "查询成功",
+                    "data": {}
+                }
 
             return HttpResponse(json.dumps(response), content_type="application/json")
 
@@ -869,25 +901,26 @@ def UserInquireDoApi(request):
         if check_token(token):
             current_page_num = request.POST.get('page')
             u = UserInfo.objects.values('id','user_name','department_id','department__name').order_by('id')
+            paginator = Paginator(u,5)
+            total = paginator.count
+            page_x = paginator.page(number=current_page_num).object_list# current_page_num
 
-            response = {}
             if u.exists():
-
-                response['message'] = '查询成功'
-                response['flag'] = 'true'
-                response['code'] = 20000
-                data = u
-
+              response = {
+                    "code": "20000",
+                    "flag": "true",
+                    "message": "查询成功",
+                     "total": total,
+                    "data": list(page_x)#(page_x.object_list)
+                }
             else:
-                response['message'] = '查询失败'
-                response['flag'] = 'flase'
-                response['code'] = 40000
-                data = {}
+                response = {
+                    "code": "20000",
+                    "flag": "true",
+                    "message": "查询成功",
+                    "data": {}
+                }
 
-            paginator = Paginator(data, 5)#预计实现分页
-            page_x = paginator.page(current_page_num)
-            response['total'] = paginator.count
-            response['data'] = page_x.object_list
 
             return HttpResponse(json.dumps(response), content_type="application/json")
 
@@ -917,15 +950,17 @@ def DepartmentInquireDoApi(request):
 
             current_page_num = request.POST.get('page')
             d = Department.objects.values('id','name').order_by('id')
-            page_x = Paginator(d, 5).page(number=current_page_num).object_list# current_page_num
+            paginator = Paginator(d,5)
+            total = paginator.count
+            page_x = paginator.page(number=current_page_num).object_list# current_page_num
 
-            #response = {}
             if d.exists():
               response = {
                     "code": "20000",
                     "flag": "true",
                     "message": "查询成功",
-                    "data": page_x#(page_x.object_list)
+                    "total": total,
+                    "data": list(page_x)#(page_x.object_list)
                 }
             else:
                 response = {
@@ -946,5 +981,6 @@ def DepartmentInquireDoApi(request):
 
 # current_pag_num = request.GET.get('page')
 #paginator = Paginator(data, 5)
+#total=paginator.count
 # page_x= paginator.page(number=current_pag_num)
 # page_x.object_list
