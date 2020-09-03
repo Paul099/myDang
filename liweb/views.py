@@ -370,6 +370,7 @@ def ManagamentInquireDoApi(request):
         code = request.POST.get('code')
         if check_token(token):
             current_page_num = request.POST.get('page')
+            current_page_size = request.POST.get('pagesize')
             userid = request.POST.get('user_id')
             departmentid= request.POST.get('department_id')
             #taskstateid= request.POST.get('state_id')
@@ -385,7 +386,7 @@ def ManagamentInquireDoApi(request):
                                                                                                 'meeting__meeting_type__meeting_type',#添加了type表，需要查询跨表
                                                                                                 'meeting__state_id',
                                                                                                 ).distinct()
-            paginator = Paginator(m_set,5)
+            paginator = Paginator(m_set,current_page_size)
             total = paginator.count
             page_x = paginator.page(number=current_page_num).object_list# current_page_num
 
@@ -446,7 +447,7 @@ def ManagamentSpecificDoApi(request):
         token = request.POST.get('token')
         code = request.POST.get('code')
         if check_token(token):
-            current_page_num = request.POST.get('page')
+            #current_page_num = request.POST.get('page')
             meetingid = request.POST.get('meeting_id')
 
             m = Meeting.objects.filter(id=meetingid)
@@ -514,7 +515,7 @@ def ManagamentAddDoApi(request):
         token = request.POST.get('token')
         code = request.POST.get('code')
         if check_token(token):
-            current_page_num = request.POST.get('page')
+            #current_page_num = request.POST.get('page')
             theme = request.POST.get('theme')
             department = request.POST.get('department_id')
             time = request.POST.get('time')
@@ -640,10 +641,11 @@ def ManagamentQueryDoApi(request):
         code = request.POST.get('code')
         if check_token(token):
             current_page_num = request.POST.get('page')
+            current_page_size = request.POST.get('pagesize')
             userid = request.POST.get('user_id')
 
             m = Meeting.objects.filter(meetinguserrelation__user_id=userid).values('meetinguserrelation__meeting_id','theme')
-            paginator = Paginator(m,5)
+            paginator = Paginator(m,current_page_size)
             total = paginator.count
             page_x = paginator.page(number=current_page_num).object_list# current_page_num
 
@@ -688,7 +690,7 @@ def ManagamentShowtoDoApi(request):
         token = request.POST.get('token')
         code = request.POST.get('code')
         if check_token(token):
-            current_page_num = request.POST.get('page')
+            #current_page_num = request.POST.get('page')
             meetingid = request.POST.get('meeting_id')
 
             m = Meeting.objects.filter(id=meetingid)
@@ -790,16 +792,14 @@ def ManagamentAnswerDoApi(request):
         code = request.POST.get('code')
         if check_token(token):
 
-            current_page_num = request.POST.get('page')
+            #current_page_num = request.POST.get('page')
             userid = request.POST.get('user_id')
             answerid = request.POST.get('answer_id')
             meetingid = request.POST.get('meeting_id')
             reason = request.POST.get('reason')
 
-
             m_u = MeetingUserRelation.objects.filter(user_id=userid,meeting_id=meetingid,answer_id=None,reason=None)
             #m_u.update()更新应该在判断之后
-
             # m = Meeting.objects.filter(meetinguserrelation__user_id=userid[0].id,place=place,id=meetingid,time__gte=time)
 
             response = {}
@@ -848,8 +848,9 @@ def ManagamentTypeDoApi(request):
         code = request.POST.get('code')
         if check_token(token):
             current_page_num = request.POST.get('page')
+            current_page_size = request.POST.get('pagesize')
             m_t = MeetingType.objects.values('meeting_type_id','meeting_type')
-            paginator = Paginator(m_t,5)
+            paginator = Paginator(m_t,current_page_size)
             total = paginator.count
             page_x = paginator.page(number=current_page_num).object_list# current_page_num
 
@@ -900,8 +901,9 @@ def UserInquireDoApi(request):
         code = request.POST.get('code')
         if check_token(token):
             current_page_num = request.POST.get('page')
+            current_page_size = request.POST.get('pagesize')
             u = UserInfo.objects.values('id','user_name','department_id','department__name').order_by('id')
-            paginator = Paginator(u,5)
+            paginator = Paginator(u,current_page_size)
             total = paginator.count
             page_x = paginator.page(number=current_page_num).object_list# current_page_num
 
@@ -949,8 +951,9 @@ def DepartmentInquireDoApi(request):
         if check_token(token):
 
             current_page_num = request.POST.get('page')
+            current_page_size = request.POST.get('pagesize')
             d = Department.objects.values('id','name').order_by('id')
-            paginator = Paginator(d,5)
+            paginator = Paginator(d,current_page_size)
             total = paginator.count
             page_x = paginator.page(number=current_page_num).object_list# current_page_num
 
@@ -979,8 +982,4 @@ def DepartmentInquireDoApi(request):
         return HttpResponse("请用post方式访问")
 
 
-# current_pag_num = request.GET.get('page')
-#paginator = Paginator(data, 5)
-#total=paginator.count
-# page_x= paginator.page(number=current_pag_num)
-# page_x.object_list
+
