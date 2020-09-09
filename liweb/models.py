@@ -132,16 +132,15 @@ class FileInfo(models.Model):
 
 
 class Meeting(models.Model):
-    sponsor = models.ForeignKey('UserInfo', models.DO_NOTHING, db_column='sponsor', blank=True, null=True,related_name='sponsor')
+    sponsor = models.ForeignKey('UserInfo', models.DO_NOTHING, db_column='sponsor', blank=True, null=True,related_name="sponser")
     theme = models.CharField(max_length=255, blank=True, null=True)
     place = models.CharField(max_length=255, blank=True, null=True)
-    ratifier_field = models.ForeignKey('UserInfo', models.DO_NOTHING, db_column='ratifier\r\n_id', blank=True, null=True,related_name='ratifier')  # Field renamed to remove unsuitable characters. Field renamed because it ended with '_'.
+    ratifier_field = models.ForeignKey('UserInfo', models.DO_NOTHING, db_column='ratifier\r\n_id', blank=True, null=True,related_name="ratifier")  # Field renamed to remove unsuitable characters. Field renamed because it ended with '_'.
     time = models.DateTimeField(blank=True, null=True)
     meeting_type = models.ForeignKey('MeetingType', models.DO_NOTHING, blank=True, null=True)
     state_id = models.IntegerField(blank=True, null=True)
     content = models.CharField(max_length=255, blank=True, null=True)
     department = models.ForeignKey(Department, models.DO_NOTHING, blank=True, null=True)
-
 
     class Meta:
         managed = False
@@ -234,15 +233,6 @@ class ProgressType(models.Model):
         db_table = 'progress_type'
 
 
-class RespDepRelation(models.Model):
-    resp = models.ForeignKey('RespList', models.DO_NOTHING, blank=True, null=True)
-    department = models.ForeignKey(Department, models.DO_NOTHING, blank=True, null=True)
-
-    class Meta:
-        managed = False
-        db_table = 'resp_dep_relation'
-
-
 class RespList(models.Model):
     content = models.CharField(max_length=255, blank=True, null=True)
     pid = models.ForeignKey('self', models.DO_NOTHING, db_column='pid', blank=True, null=True)
@@ -250,6 +240,15 @@ class RespList(models.Model):
     class Meta:
         managed = False
         db_table = 'resp_list'
+
+
+class RespPartyRelation(models.Model):
+    resp = models.ForeignKey(RespList, models.DO_NOTHING, blank=True, null=True)
+    party = models.ForeignKey(PartyBranch, models.DO_NOTHING, blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'resp_party_relation'
 
 
 class RespRoleRelation(models.Model):
@@ -316,8 +315,8 @@ class TaskJurisdiction(models.Model):
 
 class TaskMessRecord(models.Model):
     task = models.ForeignKey(Task, models.DO_NOTHING, blank=True, null=True)
-    oper_user = models.ForeignKey('UserInfo', models.DO_NOTHING, blank=True, null=True,related_name='oper')
-    noti_user = models.ForeignKey('UserInfo', models.DO_NOTHING, blank=True, null=True,related_name='note')
+    oper_user = models.ForeignKey('UserInfo', models.DO_NOTHING, blank=True, null=True,related_name="oper")
+    noti_user = models.ForeignKey('UserInfo', models.DO_NOTHING, blank=True, null=True,related_name="noti")
     type = models.IntegerField(blank=True, null=True)
     time = models.DateTimeField(blank=True, null=True)
 

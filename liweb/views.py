@@ -185,52 +185,54 @@ def ResponslibityDoApi(request):
 
 #3--2.单位责任清单接口
 def ResponsLibitylistDoApi(request):
-    # {
-    #     "code":"20000"
-    #              "flag":"true"
-    #                    "message":"查询成功"
-    #                           "data":{
-
-    #             "party_branch": "信息学院党支部",
-    #             "par_resp ": "XXXXXX",
-    #             "par_obs ": "XXXXXXXXXXX",
-    #             "department": "信息学院",
-    #             "dep_resp ": "XXXXXX",
-    #             "dep_obs ": "XXXXXXXXXXX"
-    #}
+    # [
+    #     {
+    #         "party_branch": "信息学院党支部",
+    #         "par_resp ": "XXXXXX",
+    #         "par_obs ": "XXXXXXXXXXX",
+    #     }
+    #     {
+    #         "party_branch": "电子系党支部",
+    #         "par_resp ": "XXXXXX",
+    #         "par_obs ": "XXXXXXXXXXX",
+    #     }
+    # ……
+    # ]
 
     if request.method == "POST":
         token = request.POST.get('token')
         code = request.POST.get('code')
         if check_token(token):
-            #current_page_num = request.POST.get('page')
+            current_page_num = request.POST.get('page')
+            current_page_size = request.POST.get('pagesize')
             userid = request.POST.get('user_id')
 
-            u = UserInfo.objects.filter(id=userid)
-            #p_o = PartyBranch.objects.filter(id=u[0].partyuserrelation_set.first().party_branch.id)
-            p_o = ObservationList.objects.filter(obserpartyrelation__party__id=u[0].partyuserrelation_set.first().party_branch.id)
-            p_r = RespDepRelation.objects.filter(department_id=u[0].department.id)#part_resp 的问题没有解决
-            d = Department.objects.filter(id=u[0].department.id)
-            r = RoleInfo.objects.filter(id=u[0].roleuserrelation_set.first().role.id)
-            response = {}
-            if u.exists():
-                response['message'] = '查询成功'
-                response['flag'] = 'true'
-                response['code'] = 20000
-                data = {'party_branch': u[0].partyuserrelation_set.first().party_branch.party_branch,
-                        'par_resp': p_r[0].resp.content,
-                        'par_obs': p_o[0].observation_point,
-                        'department':d[0].name,
-                        'dep_resp':d[0].respdeprelation_set.first().resp.content,
-                        'dep_obs':r[0].obserrolerelation_set.first().observation.observation_point,#连续跨表的department--obser?????
-                        }
-            else:
-                response['message'] = '查询失败'
-                response['flag'] = 'flase'
-                response['code'] = 40000
-                data = {}
 
-            response['data'] = data
+            pid= PartyBranch.objects.filter(partyuserrelation__user_id=userid).first().pid_id
+            p = PartyBranch.objects.filter(pid=pid).values('party_branch',
+                                                           'resppartyrelation__resp__content',
+                                                           'obserpartyrelation__observation__observation_point')
+            paginator =Paginator(p,current_page_size)
+            total = paginator.count
+            page_x = paginator.page(number=current_page_num).object_list
+
+            response = {}
+            if p.exists():
+                response={
+                    'message':'查询成功',
+                    'flag':'true',
+                    'code':20000,
+                    'total':total,
+                    'data':list(page_x)
+                }
+            else:
+                response={
+                    'message':'查询失败',
+                    'flag':'flase',
+                    'code':40000,
+                    'data':{}
+                }
+
             return HttpResponse(json.dumps(response), content_type="application/json")
 
         else:
@@ -240,7 +242,7 @@ def ResponsLibitylistDoApi(request):
         return HttpResponse("请用post方式访问")
 
 
-#3--3.学校责任清单接口
+#3--3.我的责任清单接口
 def ResponslibitylistscDoApi(request):
     # {
     #     "code":"20000"
@@ -261,7 +263,7 @@ def ResponslibitylistscDoApi(request):
             userid = request.POST.get('user_id')
             u = UserInfo.objects.filter(id=userid)
             p_o = PartyBranch.objects.filter(id= u[0].partyuserrelation_set.first().party_branch.id)
-            p_r = RespDepRelation.objects.filter(department_id=u[0].department.id)
+           # p_r = RespDepRelation.objects.filter(department_id=u[0].department.id)
             response = {}
             if u.exists():
 
@@ -269,7 +271,7 @@ def ResponslibitylistscDoApi(request):
                 response['flag'] = 'true'
                 response['code'] = 20000
                 data = {'party_branch': u[0].partyuserrelation_set.first().party_branch.party_branch,
-                        'par_resp': p_r[0].resp.content,
+                        #'par_resp': p_r[0].resp.content,
                         'par_obs': p_o[0].obserpartyrelation_set.first().observation.observation_point,
                         }
 
@@ -579,7 +581,7 @@ def ManagamentAddDoApi(request):
 
 
 
-
+# #通过5.4包括5.5接口
 # #5--5、邀请参会人接口
 # def ManagamentInviteDoApi(request):
 #     # {
@@ -622,7 +624,7 @@ def ManagamentAddDoApi(request):
 #
 #     else:
 #         return HttpResponse("请用post方式访问")
-#
+
 
 
 
