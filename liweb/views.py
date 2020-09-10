@@ -117,7 +117,7 @@ def dictfetchall(cursor):
 
 #----------------接口---------------#
 #3--1.责任数据统计接口
-def ResponslibityDoApi(request):
+def ResponsibilityDoApi(request):
     # {
     #     "code": "20000"
     #             "flag": "true"
@@ -184,7 +184,7 @@ def ResponslibityDoApi(request):
 
 
 #3--2.单位责任清单接口
-def ResponsLibitylistDoApi(request):
+def ResponsibilityListPartyDoApi(request):
     # [
     #     {
     #         "party_branch": "信息学院党支部",
@@ -206,7 +206,6 @@ def ResponsLibitylistDoApi(request):
             current_page_num = request.POST.get('page')
             current_page_size = request.POST.get('pagesize')
             userid = request.POST.get('user_id')
-
 
             pid= PartyBranch.objects.filter(partyuserrelation__user_id=userid).first().pid_id
             p = PartyBranch.objects.filter(pid=pid).values('party_branch',
@@ -243,7 +242,7 @@ def ResponsLibitylistDoApi(request):
 
 
 #3--3.我的责任清单接口
-def ResponslibitylistscDoApi(request):
+def ResponsibilityListRoleDoApi(request):
     # {
     #     "code":"20000"
     #              "flag":"true"
@@ -259,29 +258,33 @@ def ResponslibitylistscDoApi(request):
         token = request.POST.get('token')
         code = request.POST.get('code')
         if check_token(token):
-            #current_page_num = request.POST.get('page')
+            current_page_num = request.POST.get('page')
+            current_page_size = request.POST.get('pagesize')
             userid = request.POST.get('user_id')
-            u = UserInfo.objects.filter(id=userid)
-            p_o = PartyBranch.objects.filter(id= u[0].partyuserrelation_set.first().party_branch.id)
-           # p_r = RespDepRelation.objects.filter(department_id=u[0].department.id)
+            r = RoleInfo.objects.filter(roleuserrelation__user_id=userid).values('role',
+                                                                                 'resprolerelation__resp__content',
+                                                                                 'obserrolerelation__observation__observation_point')
+
+            paginator =Paginator(r,current_page_size)
+            total = paginator.count
+            page_x = paginator.page(number=current_page_num).object_list
             response = {}
-            if u.exists():
-
-                response['message'] = '查询成功'
-                response['flag'] = 'true'
-                response['code'] = 20000
-                data = {'party_branch': u[0].partyuserrelation_set.first().party_branch.party_branch,
-                        #'par_resp': p_r[0].resp.content,
-                        'par_obs': p_o[0].obserpartyrelation_set.first().observation.observation_point,
-                        }
-
+            if r.exists():
+                response={
+                    'message':'查询成功',
+                    'flag':'true',
+                    'code':20000,
+                    'total':total,
+                    'data':list(page_x)
+                }
             else:
-                response['message'] = '查询失败'
-                response['flag'] = 'flase'
-                response['code'] = 40000
-                data = {}
+                response={
+                    'message':'查询失败',
+                    'flag':'flase',
+                    'code':40000,
+                    'data':{}
+                }
 
-            response['data'] = data
             return HttpResponse(json.dumps(response), content_type="application/json")
         else:
             return HttpResponse(json.dumps({"code":code,"message":"请登录"}), content_type="application/json")
@@ -581,7 +584,7 @@ def ManagamentAddDoApi(request):
 
 
 
-# #通过5.4包括5.5接口
+# #、5.5接口被包括进5.4接口中完成邀请
 # #5--5、邀请参会人接口
 # def ManagamentInviteDoApi(request):
 #     # {
@@ -851,12 +854,24 @@ def ManagamentTypeDoApi(request):
         if check_token(token):
             current_page_num = request.POST.get('page')
             current_page_size = request.POST.get('pagesize')
-            m_t = MeetingType.objects.values('meeting_type_id','meeting_type')
-            paginator = Paginator(m_t,current_page_size)
+            userid = request.POST.get('user_id')
+
+            m = Meeting.objects.filter(meetinguserrelation__user_id=userid).values('id',
+                                                                                   'theme',
+                                                                                   'department__department__name',
+                                                                                   'time',
+                                                                                   'place',
+                                                                                   'sponsor__user_name',
+                                                                                   'meeting_type__meeting_type',
+                                                                                   'state_id',#0为未开始，1为已结束
+                                                                                   'meetinguserrelation__answer__answer',).order_by('id')
+
+            paginator = Paginator(m,current_page_size)
             total = paginator.count
             page_x = paginator.page(number=current_page_num).object_list# current_page_num
+            response = {}
 
-            if m_t.exists():
+            if m.exists():
               response = {
                     "code": "20000",
                     "flag": "true",
@@ -881,6 +896,117 @@ def ManagamentTypeDoApi(request):
         return HttpResponse("请用post方式访问")
 
 
+
+# #5--11、被邀请会议列表查询接口
+# def ManagamentInvitedDoApi(request):
+#     # [
+#     #     "meeting_id ": "1",
+#     # "theme": "XXXXX",
+#     # "department": "信息",
+#     # "time": "2020-5-31",
+#     # "place": "信息学院A307",
+#     # "sponsor": "李四",
+#     # "type": "XXXX",
+#     # "state": "未完成",
+#     # “answer”:{“参加”, ”请假”}
+#     # ]
+#
+#
+#     if request.method == "POST":
+#         token = request.POST.get('token')
+#         code = request.POST.get('code')
+#         if check_token(token):
+#             current_page_num = request.POST.get('page')
+#             current_page_size = request.POST.get('pagesize')
+#             userid = request.POST.get('user_id')
+#
+#             m = Meeting.objects.filter(meetinguserrelation__user_id=userid).values('id',
+#                                                                                    'theme',
+#                                                                                    'department__department__name',
+#                                                                                    'time','place',
+#                                                                                    'sponsor__user_name',
+#                                                                                    'meeting_type__meeting_type',
+#                                                                                    'state_id',#0为未开始，1为已结束
+#                                                                                    'meetinguserrelation__answer__answer',).order_by('id')
+#
+#             paginator = Paginator(m,current_page_size)
+#             total = paginator.count
+#             page_x = paginator.page(number=current_page_num).object_list# current_page_num
+#             response = {}
+#
+#             if m.exists():
+#               response = {
+#                     "code": "20000",
+#                     "flag": "true",
+#                     "message": "查询成功",
+#                     "total": total,
+#                     "data": list(page_x)#(page_x.object_list)
+#                 }
+#             else:
+#                 response = {
+#                     "code": "20000",
+#                     "flag": "true",
+#                     "message": "查询成功",
+#                     "data": {}
+#                 }
+#
+#             return HttpResponse(json.dumps(response), content_type="application/json")
+#
+#         else:
+#             return HttpResponse(json.dumps({"code":code,"message":"请登录"}), content_type="application/json")
+#
+#     else:
+#         return HttpResponse("请用post方式访问")
+
+
+
+
+#5--10、会议类型查询接口
+def ManagamentInvitedDoApi(request):
+    # {
+    #     "meeting_type_id": "1",
+    #     "meeting_type": "党建学习"
+    # }
+    # {
+    #     " meeting_type_id ": "2",
+    #     " meeting_type ": "任务总结"
+    # }
+    # ……
+    if request.method == "POST":
+        token = request.POST.get('token')
+        code = request.POST.get('code')
+        if check_token(token):
+            current_page_num = request.POST.get('page')
+            current_page_size = request.POST.get('pagesize')
+            m_t = MeetingType.objects.values('meeting_type_id','meeting_type')
+
+            paginator = Paginator(m_t,current_page_size)
+            total = paginator.count
+            page_x = paginator.page(number=current_page_num).object_list# current_page_num
+
+            if m_t.exists():
+              response = {
+                    "code": "20000",
+                    "flag": "true",
+                    "message": "查询成功",
+                    "total": total,
+                    "data": list(page_x)#(page_x.object_list)
+                }
+            else:
+                response = {
+                    "code": "20000",
+                    "flag": "true",
+                    "message": "查询成功",
+                    "data": {}
+                }
+
+            return HttpResponse(json.dumps(response,cls=CJsonEncoder), content_type="application/json")
+
+        else:
+            return HttpResponse(json.dumps({"code":code,"message":"请登录"}), content_type="application/json")
+
+    else:
+        return HttpResponse("请用post方式访问")
 
 
 # 6--1、用户查询接口
