@@ -207,10 +207,12 @@ def ResponsibilityListPartyDoApi(request):
             current_page_size = request.POST.get('pagesize')
             userid = request.POST.get('user_id')
 
-            pid= PartyBranch.objects.filter(partyuserrelation__user_id=userid).first().pid_id
-            p = PartyBranch.objects.filter(pid=pid).values('party_branch',
-                                                           'resppartyrelation__resp__content',
-                                                           'obserpartyrelation__observation__observation_point')
+            # num = PartyBranch.objects.filter(partyuserrelation__user_id=userid).count()
+            # if num > 1:
+            pid= PartyBranch.objects.filter(partyuserrelation__user_id=userid).first().pid_id#)&~Q(party_branch__startswith='校')
+            p = PartyBranch.objects.filter(Q(partyuserrelation__user_id=userid)|Q(id= pid)).values('party_branch',
+                                                                                                   'resppartyrelation__resp__content',
+                                                                                                   'obserpartyrelation__observation__observation_point')
             paginator =Paginator(p,current_page_size)
             total = paginator.count
             page_x = paginator.page(number=current_page_num).object_list
@@ -887,7 +889,7 @@ def ManagamentTypeDoApi(request):
                     "data": {}
                 }
 
-            return HttpResponse(json.dumps(response), content_type="application/json")
+            return HttpResponse(json.dumps(response,cls=CJsonEncoder), content_type="application/json")
 
         else:
             return HttpResponse(json.dumps({"code":code,"message":"请登录"}), content_type="application/json")
@@ -961,7 +963,7 @@ def ManagamentTypeDoApi(request):
 
 
 
-#5--10、会议类型查询接口
+#5--11被邀请会议列表查询接口
 def ManagamentInvitedDoApi(request):
     # {
     #     "meeting_type_id": "1",
