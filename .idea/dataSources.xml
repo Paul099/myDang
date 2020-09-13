@@ -7,14 +7,5 @@
       <jdbc-driver>com.mysql.cj.jdbc.Driver</jdbc-driver>
       <jdbc-url>jdbc:mysql://rm-2ze0mbg8o9ea363302o.mysql.rds.aliyuncs.com:3306</jdbc-url>
     </data-source>
-    <data-source source="LOCAL" name="messi" uuid="2b9300be-85f2-4ef8-94a6-822714a2051b">
-      <driver-ref>mysql.8</driver-ref>
-      <synchronize>true</synchronize>
-      <jdbc-driver>com.mysql.cj.jdbc.Driver</jdbc-driver>
-      <jdbc-url>jdbc:mysql://localhost:3306</jdbc-url>
-      <driver-properties>
-        <property name="serverTimezone" value="UTC" />
-      </driver-properties>
-    </data-source>
   </component>
 </project>

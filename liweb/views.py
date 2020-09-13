@@ -207,12 +207,13 @@ def ResponsibilityListPartyDoApi(request):
             current_page_size = request.POST.get('pagesize')
             userid = request.POST.get('user_id')
 
-            # num = PartyBranch.objects.filter(partyuserrelation__user_id=userid).count()
-            # if num > 1:
-            pid= PartyBranch.objects.filter(partyuserrelation__user_id=userid).first().pid_id#)&~Q(party_branch__startswith='校')
+
+            pid = PartyBranch.objects.filter(Q(partyuserrelation__user_id=userid)&~Q(party_branch__startswith='校')).first().pid_id#通过 Q（__startswith='校'）筛选出不是校党委的支部的pid
+            #pid= PartyBranch.objects.filter(partyuserrelation__user_id=userid).first().pid_id#)&~Q(party_branch__startswith='校')
             p = PartyBranch.objects.filter(Q(partyuserrelation__user_id=userid)|Q(id= pid)).values('party_branch',
                                                                                                    'resppartyrelation__resp__content',
                                                                                                    'obserpartyrelation__observation__observation_point')
+
             paginator =Paginator(p,current_page_size)
             total = paginator.count
             page_x = paginator.page(number=current_page_num).object_list
@@ -458,7 +459,7 @@ def ManagamentSpecificDoApi(request):
             meetingid = request.POST.get('meeting_id')
 
             m = Meeting.objects.filter(id=meetingid)
-            #d =Department.objects.filter(userinfo__meetinguserrelation__meeting_id=meetingid)
+            #d =Department.objects.filter(id=m[0].department_id).first()
             u =UserInfo.objects.filter(meetinguserrelation__meeting_id=meetingid)
             mu =MeetingUserRelation.objects.filter(meeting_id=meetingid)
 
@@ -835,12 +836,8 @@ def ManagamentAnswerDoApi(request):
         return HttpResponse("请用post方式访问")
 
 
-
-
-
-
-#5--10、会议类型查询接口
-def ManagamentTypeDoApi(request):
+#5--10 会议类型查询接口
+def ManagamentTypeDoApi(request):#ManagamentTypeDoApi
     # {
     #     "meeting_type_id": "1",
     #     "meeting_type": "党建学习"
@@ -856,11 +853,65 @@ def ManagamentTypeDoApi(request):
         if check_token(token):
             current_page_num = request.POST.get('page')
             current_page_size = request.POST.get('pagesize')
+            m_t = MeetingType.objects.values('meeting_type_id','meeting_type')
+
+            paginator = Paginator(m_t,current_page_size)
+            total = paginator.count
+            page_x = paginator.page(number=current_page_num).object_list# current_page_num
+
+            if m_t.exists():
+              response = {
+                    "code": "20000",
+                    "flag": "true",
+                    "message": "查询成功",
+                    "total": total,
+                    "data": list(page_x)#(page_x.object_list)
+                }
+            else:
+                response = {
+                    "code": "20000",
+                    "flag": "true",
+                    "message": "查询成功",
+                    "data": {}
+                }
+
+            return HttpResponse(json.dumps(response,cls=CJsonEncoder), content_type="application/json")
+
+        else:
+            return HttpResponse(json.dumps({"code":code,"message":"请登录"}), content_type="application/json")
+
+    else:
+        return HttpResponse("请用post方式访问")
+
+
+
+
+#5--11、被邀请会议列表查询接口
+def ManagamentInvitedDoApi(request):#ManagamentInvitedDoApi
+    # [
+    #     "meeting_id ": "1",
+    # "theme": "XXXXX",
+    # "department": "信息",
+    # "time": "2020-5-31",
+    # "place": "信息学院A307",
+    # "sponsor": "李四",
+    # "type": "XXXX",
+    # "state": "未完成",
+    # “answer”:{“参加”, ”请假”}
+    # ]
+    #
+
+    if request.method == "POST":
+        token = request.POST.get('token')
+        code = request.POST.get('code')
+        if check_token(token):
+            current_page_num = request.POST.get('page')
+            current_page_size = request.POST.get('pagesize')
             userid = request.POST.get('user_id')
 
             m = Meeting.objects.filter(meetinguserrelation__user_id=userid).values('id',
                                                                                    'theme',
-                                                                                   'department__department__name',
+                                                                                   'department__name',
                                                                                    'time',
                                                                                    'place',
                                                                                    'sponsor__user_name',
@@ -963,52 +1014,7 @@ def ManagamentTypeDoApi(request):
 
 
 
-#5--11被邀请会议列表查询接口
-def ManagamentInvitedDoApi(request):
-    # {
-    #     "meeting_type_id": "1",
-    #     "meeting_type": "党建学习"
-    # }
-    # {
-    #     " meeting_type_id ": "2",
-    #     " meeting_type ": "任务总结"
-    # }
-    # ……
-    if request.method == "POST":
-        token = request.POST.get('token')
-        code = request.POST.get('code')
-        if check_token(token):
-            current_page_num = request.POST.get('page')
-            current_page_size = request.POST.get('pagesize')
-            m_t = MeetingType.objects.values('meeting_type_id','meeting_type')
 
-            paginator = Paginator(m_t,current_page_size)
-            total = paginator.count
-            page_x = paginator.page(number=current_page_num).object_list# current_page_num
-
-            if m_t.exists():
-              response = {
-                    "code": "20000",
-                    "flag": "true",
-                    "message": "查询成功",
-                    "total": total,
-                    "data": list(page_x)#(page_x.object_list)
-                }
-            else:
-                response = {
-                    "code": "20000",
-                    "flag": "true",
-                    "message": "查询成功",
-                    "data": {}
-                }
-
-            return HttpResponse(json.dumps(response,cls=CJsonEncoder), content_type="application/json")
-
-        else:
-            return HttpResponse(json.dumps({"code":code,"message":"请登录"}), content_type="application/json")
-
-    else:
-        return HttpResponse("请用post方式访问")
 
 
 # 6--1、用户查询接口
