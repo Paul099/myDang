@@ -531,7 +531,9 @@ def ManagamentAddDoApi(request):
             sponsor = request.POST.get('sponsor')
             type = request.POST.get('type')
             stateid =request.POST.get('state_id')#########
-            userid = request.POST.get('user_id')
+            #userid = request.POST.get('user_id')#peoNames = request.POST.getlist('peoName', [])
+
+            userid = request.POST.getlist('user_id[]')
             content = request.POST.get('content')######
 
             #d_idmax = Department.objects.aggregate(idmax=Max('id'))
@@ -553,8 +555,18 @@ def ManagamentAddDoApi(request):
             #u.save()
 
             mu_start = MeetingUserRelation.objects.count()
-            mu = MeetingUserRelation.objects.create( meeting_id=m.id,user_id=userid)
-            mu.save()
+
+            #mu = MeetingUserRelation.objects.create( meeting_id=m.id,user_id=userid)#添加单个数据，不能添加数组（列表）数据
+
+            l = len(userid)
+            for x in range(l):
+                 if userid[x]:
+
+                     mu = MeetingUserRelation.objects.create(meeting_id=m.id,user_id=userid[x])
+                     mu.save()
+                 else:
+                     break
+            #mu.save()
             mu_end = MeetingUserRelation.objects.count()
 
             response = {}
@@ -563,7 +575,7 @@ def ManagamentAddDoApi(request):
                 response['message'] = '添加成功'
                 response['flag'] = 'true'
                 response['code'] = 20000
-                data = {'is succeed':1
+                data = {'is_succeed':1
                         }
             else:
                 response['message'] = '添加失败'
@@ -764,7 +776,7 @@ def ManagamentShowinDoApi(request):
                 response['message'] = '签到成功'
                 response['flag'] = 'true'
                 response['code'] = 20000
-                data = {'is succeed':1
+                data = {'is_succeed':1
                         }
 
             else:
@@ -812,11 +824,15 @@ def ManagamentAnswerDoApi(request):
 
             response = {}
             if m_u.exists() :
-                m_u.update(answer_id=answerid,reason=reason)
+                if answerid==1 :
+
+                    m_u.update(answer_id=answerid,reason=reason)
+                else:
+                    m_u.update(answer_id=answerid)
                 response['message'] = '应答成功'
                 response['flag'] = 'true'
                 response['code'] = 20000
-                data = {'is succeed':1
+                data = {'is_succeed':1
                         }
 
             else:
@@ -950,66 +966,7 @@ def ManagamentInvitedDoApi(request):#ManagamentInvitedDoApi
 
 
 
-# #5--11、被邀请会议列表查询接口
-# def ManagamentInvitedDoApi(request):
-#     # [
-#     #     "meeting_id ": "1",
-#     # "theme": "XXXXX",
-#     # "department": "信息",
-#     # "time": "2020-5-31",
-#     # "place": "信息学院A307",
-#     # "sponsor": "李四",
-#     # "type": "XXXX",
-#     # "state": "未完成",
-#     # “answer”:{“参加”, ”请假”}
-#     # ]
-#
-#
-#     if request.method == "POST":
-#         token = request.POST.get('token')
-#         code = request.POST.get('code')
-#         if check_token(token):
-#             current_page_num = request.POST.get('page')
-#             current_page_size = request.POST.get('pagesize')
-#             userid = request.POST.get('user_id')
-#
-#             m = Meeting.objects.filter(meetinguserrelation__user_id=userid).values('id',
-#                                                                                    'theme',
-#                                                                                    'department__department__name',
-#                                                                                    'time','place',
-#                                                                                    'sponsor__user_name',
-#                                                                                    'meeting_type__meeting_type',
-#                                                                                    'state_id',#0为未开始，1为已结束
-#                                                                                    'meetinguserrelation__answer__answer',).order_by('id')
-#
-#             paginator = Paginator(m,current_page_size)
-#             total = paginator.count
-#             page_x = paginator.page(number=current_page_num).object_list# current_page_num
-#             response = {}
-#
-#             if m.exists():
-#               response = {
-#                     "code": "20000",
-#                     "flag": "true",
-#                     "message": "查询成功",
-#                     "total": total,
-#                     "data": list(page_x)#(page_x.object_list)
-#                 }
-#             else:
-#                 response = {
-#                     "code": "20000",
-#                     "flag": "true",
-#                     "message": "查询成功",
-#                     "data": {}
-#                 }
-#
-#             return HttpResponse(json.dumps(response), content_type="application/json")
-#
-#         else:
-#             return HttpResponse(json.dumps({"code":code,"message":"请登录"}), content_type="application/json")
-#
-#     else:
-#         return HttpResponse("请用post方式访问")
+
 
 
 
