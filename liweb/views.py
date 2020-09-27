@@ -393,7 +393,7 @@ def ManagamentInquireDoApi(request):
                                                                                                 'meeting__sponsor__user_name', #因为sponsor修改为user的外键，需要跨表查询名字
                                                                                                 'meeting__meeting_type__meeting_type',#添加了type表，需要查询跨表
                                                                                                 'meeting__state__state',
-                                                                                                ).distinct()
+                                                                                                ).distinct().order_by('id')
             paginator = Paginator(m_set,current_page_size)
             total = paginator.count
             page_x = paginator.page(number=current_page_num).object_list# current_page_num
@@ -410,7 +410,7 @@ def ManagamentInquireDoApi(request):
                 response = {
                     "code": "20000",
                     "flag": "true",
-                    "message": "查询成功",
+                    "message": "查询失败",
                     "data": {}
                 }
 
