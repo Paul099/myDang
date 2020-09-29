@@ -664,7 +664,7 @@ def ManagamentQueryDoApi(request):
             current_page_size = request.POST.get('pagesize')
             userid = request.POST.get('user_id')
 
-            m = Meeting.objects.filter(meetinguserrelation__user_id=userid).values('meetinguserrelation__meeting_id','theme')
+            m = Meeting.objects.filter(meetinguserrelation__user_id=userid).values('meetinguserrelation__meeting_id','theme').distinct()
             paginator = Paginator(m,current_page_size)
             total = paginator.count
             page_x = paginator.page(number=current_page_num).object_list# current_page_num
@@ -933,7 +933,7 @@ def ManagamentInvitedDoApi(request):#ManagamentInvitedDoApi
                                                                                    'sponsor__user_name',
                                                                                    'meeting_type__meeting_type',
                                                                                    'state_id',#0为未开始，1为已结束
-                                                                                   'meetinguserrelation__answer__answer',).order_by('id')
+                                                                                   'meetinguserrelation__answer__answer',).order_by('id').distinct()
 
             paginator = Paginator(m,current_page_size)
             total = paginator.count
@@ -995,7 +995,7 @@ def UserInquireDoApi(request):
         if check_token(token):
             current_page_num = request.POST.get('page')
             current_page_size = request.POST.get('pagesize')
-            u = UserInfo.objects.values('id','user_name','department_id','department__name').order_by('id')
+            u = UserInfo.objects.values('id','user_name','department_id','department__name').order_by('id').distinct()
             paginator = Paginator(u,current_page_size)
             total = paginator.count
             page_x = paginator.page(number=current_page_num).object_list# current_page_num
@@ -1045,7 +1045,7 @@ def DepartmentInquireDoApi(request):
 
             current_page_num = request.POST.get('page')
             current_page_size = request.POST.get('pagesize')
-            d = Department.objects.values('id','name').order_by('id')
+            d = Department.objects.values('id','name').order_by('id').distinct()
             paginator = Paginator(d,current_page_size)
             total = paginator.count
             page_x = paginator.page(number=current_page_num).object_list# current_page_num
