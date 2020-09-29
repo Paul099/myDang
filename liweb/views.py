@@ -212,7 +212,7 @@ def ResponsibilityListPartyDoApi(request):
             #pid= PartyBranch.objects.filter(partyuserrelation__user_id=userid).first().pid_id#)&~Q(party_branch__startswith='校')
             p = PartyBranch.objects.filter(Q(partyuserrelation__user_id=userid)|Q(id= pid)).values('party_branch',
                                                                                                    'resppartyrelation__resp__content',
-                                                                                                   'obserpartyrelation__observation__observation_point')
+                                                                                                   'obserpartyrelation__observation__observation_point').distinct()
 
             paginator =Paginator(p,current_page_size)
             total = paginator.count
@@ -266,7 +266,7 @@ def ResponsibilityListRoleDoApi(request):
             userid = request.POST.get('user_id')
             r = RoleInfo.objects.filter(roleuserrelation__user_id=userid).values('role',
                                                                                  'resprolerelation__resp__content',
-                                                                                 'obserrolerelation__observation__observation_point')
+                                                                                 'obserrolerelation__observation__observation_point').distinct()
 
             paginator =Paginator(r,current_page_size)
             total = paginator.count
