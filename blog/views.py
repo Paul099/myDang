@@ -7,6 +7,9 @@ from django.http import HttpResponse, JsonResponse
 from blog.models import *
 from datetime import datetime
 import datetime
+from django.core.paginator import Paginator
+
+
 
 
 class CJsonEncoder(json.JSONEncoder):
@@ -95,6 +98,8 @@ def IndexDoApi(request):
     if request.method == "POST":
         code = request.POST.get('code')
         token = request.POST.get('token')
+        page = request.POST.get('page')
+        pagesize = request.POST.get('pagesize')
         if check_token(token):
             u = FileInfo.objects.filter(file_type=1).values()
             response = {}
@@ -102,12 +107,16 @@ def IndexDoApi(request):
             response['message'] = '查询成功'
             response['flag'] = 'true'
             response['code'] = 20000
+            response['total'] = FileInfo.objects.filter(file_type=1).count()
 
-            response['data'] = list(u)
+            paginator = Paginator(u, pagesize)  # 对象,每页多少条数据
+            page_x = paginator.page(page)  # 第一页的信息
+
+            response['data'] = list(page_x.object_list)
 
             return HttpResponse(json.dumps(response, cls=CJsonEncoder), content_type="application/json")
         else:
-            return HttpResponse(json.dumps({"message":"请登录"}), content_type="application/json")
+            return HttpResponse(json.dumps({"message": "请登录", "code": -1}), content_type="application/json")
     else:
 
         return HttpResponse("请用post方式访问")
@@ -146,7 +155,7 @@ def MostDoApi(request):
 
             return HttpResponse(json.dumps(response), content_type="application/json")
         else:
-            return HttpResponse(json.dumps({"message":"请登录"}), content_type="application/json")
+            return HttpResponse(json.dumps({"message": "请登录"}), content_type="application/json")
     else:
 
         return HttpResponse("请用post方式访问")
@@ -166,19 +175,23 @@ def ListDoApi(request):
     if request.method == "POST":
         code = request.POST.get('code')
         token = request.POST.get('token')
+        page = request.POST.get('page')
+        pagesize = request.POST.get('pagesize')
         if check_token(token):
-            u = FileInfo.objects.filter(file_type=1).values()
+            u = FileInfo.objects.filter(file_type=2).values()
             response = {}
 
             response['message'] = '查询成功'
             response['flag'] = 'true'
             response['code'] = 20000
-
-            response['data'] = list(u)
+            paginator = Paginator(u, pagesize)  # 对象,每页多少条数据
+            page_x = paginator.page(page)  # 第一页的信息
+            response['data'] = list(page_x.object_list)
+            response['total'] = FileInfo.objects.filter(file_type=1).count()
 
             return HttpResponse(json.dumps(response, cls=CJsonEncoder), content_type="application/json")
         else:
-            return HttpResponse(json.dumps({"message":"请登录"}), content_type="application/json")
+            return HttpResponse(json.dumps({"message": "请登录", "code": -1}), content_type="application/json")
     else:
 
         return HttpResponse("请用post方式访问")
@@ -217,7 +230,7 @@ def WorkDoApi(request):
 
             return HttpResponse(json.dumps(response), content_type="application/json")
         else:
-            return HttpResponse(json.dumps({"message":"请登录"}), content_type="application/json")
+            return HttpResponse(json.dumps({"message": "请登录", "code": -1}), content_type="application/json")
 
 
     else:
@@ -229,7 +242,7 @@ def WorkDoApi(request):
 
 
 def TaskDoApi(request):
-    # {
+    # { 1
     #     "code":"20000"
     #     "flag":"true"
     #     "message":"查询成功"
@@ -283,14 +296,14 @@ def TaskDoApi(request):
                 }
             return HttpResponse(json.dumps(response), content_type="application/json")
         else:
-            return HttpResponse(json.dumps({"message":"请登录"}), content_type="application/json")
+            return HttpResponse(json.dumps({"message": "请登录", "code": -1}), content_type="application/json")
     else:
 
         return HttpResponse("请用post方式访问")
 
 
 def TaskgetDoApi(request):
-    # {
+    # { 2
     #     "code": "20000"
     #             "flag": "true"
     #                     "message":"查询成功"
@@ -305,27 +318,31 @@ def TaskgetDoApi(request):
         user_id = request.POST.get('user_id')
         code = request.POST.get('code')
         token = request.POST.get('token')
+        page = request.POST.get('page')
+        pagesize = request.POST.get('pagesize')
         if check_token(token):
             u_set = Task.objects.filter(taskuserrelation__id=user_id).values('id', 'appointor__user_name', 'start_time',
                                                                              'title')
-
+            paginator = Paginator(u_set, pagesize)  # 对象,每页多少条数据
+            page_x = paginator.page(page)  # 第一页的信息
             response = {
                 "code": "20000",
                 "flag": "true",
                 "message": "查询成功",
-                "data": list(u_set)
+                "total": Task.objects.filter(taskuserrelation__id=user_id).count(),
+                "data": list(page_x.object_list)
             }
 
             return HttpResponse(json.dumps(response, cls=CJsonEncoder), content_type="application/json")
         else:
-            return HttpResponse(json.dumps({"message":"请登录"}), content_type="application/json")
+            return HttpResponse(json.dumps({"message": "请登录", "code": -1}), content_type="application/json")
     else:
 
         return HttpResponse("请用post方式访问")
 
 
 def TaskToDoApi(request):
-    # {
+    # { 3
     #     "code": "20000"
     #             "flag": "true"
     #                     "message":"查询成功"
@@ -341,26 +358,32 @@ def TaskToDoApi(request):
         user_id = request.POST.get('user_id')
         code = request.POST.get('code')
         token = request.POST.get('token')
+        page = request.POST.get('page')
+        pagesize = request.POST.get('pagesize')
         if check_token(token):
 
-            u_set = TaskMessRecord.objects.filter(noti_user=user_id).values('task', 'task__title', 'noti_user__user_name',
-                                                                        'time')
+            u_set = TaskMessRecord.objects.filter(noti_user=user_id).values('task', 'task__title',
+                                                                            'noti_user__user_name',
+                                                                            'time')
+            paginator = Paginator(u_set, pagesize)  # 对象,每页多少条数据
+            page_x = paginator.page(page)  # 第一页的信息
             response = {
                 "code": "20000",
                 "flag": "true",
                 "message": "查询成功",
-                "data": list(u_set)
+                "total": TaskMessRecord.objects.filter(noti_user=user_id).count(),
+                "data": list(page_x.object_list)
             }
             return HttpResponse(json.dumps(response, cls=CJsonEncoder), content_type="application/json")
         else:
-            return HttpResponse(json.dumps({"message":"请登录"}), content_type="application/json")
+            return HttpResponse(json.dumps({"message": "请登录", "code": -1}), content_type="application/json")
     else:
 
         return HttpResponse("请用post方式访问")
 
 
 def TaskListDoApi(request):
-    # {
+    # { 4
     #     "code": "20000"
     #             "flag": "true"
     #                     "message":"查询成功"
@@ -383,6 +406,7 @@ def TaskListDoApi(request):
             name = UserInfo.objects.filter(id=user_id).values('user_name')
             role = RoleInfo.objects.filter(roleuserrelation__user_id=user_id).values()
 
+
             ywc_task_num = Task.objects.filter(state=1, taskuserrelation__user_id=user_id).count()
             wwc_task_num = Task.objects.filter(state=2, taskuserrelation__user_id=user_id).count()
             cy_task_num = TaskUserRelation.objects.filter(user=user_id).count()
@@ -404,13 +428,14 @@ def TaskListDoApi(request):
             }
             return HttpResponse(json.dumps(response), content_type="application/json")
         else:
-            return HttpResponse(json.dumps({"message":"请登录"}), content_type="application/json")
+            return HttpResponse(json.dumps({"message": "请登录", "code": -1}), content_type="application/json")
     else:
 
         return HttpResponse("请用post方式访问")
 
 
 def TaskAddDoApi(request):
+    # 5
     if request.method == "POST":
         code = request.POST.get('code')
         task_title = request.POST.get('task_title')
@@ -431,12 +456,12 @@ def TaskAddDoApi(request):
             t = TaskType.objects.get(id=type)
             p = TaskPriority.objects.get(id=priority)
             # 传什么？
-            #这个地方需要协商参与者和完成人，还有全部的add是否对外键做处理？？？？？？？？？？
-            #所属单位传id还是名称
-
-            m_idmax = Task.objects.aggregate(idmax=Max('id'))
-            u = Task(id=m_idmax['idmax'] + 1, title=task_title, end_time=end_time, start_time=start_time, pid=pre_task_id,
-                     appointor=appointor_id,
+            # 这个地方需要协商参与者和完成人，还有全部的add是否对外键做处理？？？？？？？？？？
+            # 所属单位传id还是名称
+            _pre_task_id=Task.objects.get(id=pre_task_id)
+            _appointor_id=UserInfo.objects.get(id=appointor_id)
+            u = Task(title=task_title, end_time=end_time, start_time=start_time, pid=_pre_task_id,
+                     appointor=_appointor_id,
                      type=t, department_id=department, priority=p, content=content)
             u.save()
             u2 = TaskUserRelation(user_id=user_id, task_id=u.id)
@@ -452,14 +477,14 @@ def TaskAddDoApi(request):
             }
             return HttpResponse(json.dumps(response), content_type="application/json")
         else:
-            return HttpResponse(json.dumps({"message":"请登录"}), content_type="application/json")
+            return HttpResponse(json.dumps({"message": "请登录", "code": -1}), content_type="application/json")
     else:
 
         return HttpResponse("请用post方式访问")
 
 
 def TaskSonDoApi(request):
-    # {
+    # { 6
     #     "code": "20000"
     #             "flag": "true"
     #                     "message":"查询成功"
@@ -472,7 +497,7 @@ def TaskSonDoApi(request):
         code = request.POST.get('code')
         task_title = request.POST.get('task_title')
         last_time = int(request.POST.get('last_time'))
-        pre_task_id = request.POST.get('pre_task_id')  # 子任务不需要父节点？
+        pre_task_id = request.POST.get('pid_id')  # 子任务不需要父节点？
         user_id = request.POST.get('priority_id')
         content = request.POST.get('content')
         token = request.POST.get('token')
@@ -480,7 +505,8 @@ def TaskSonDoApi(request):
             start_time = datetime.datetime.now()
             end_time = datetime.datetime.now() + datetime.timedelta(days=last_time)
             m_idmax = Task.objects.aggregate(idmax=Max('id'))
-            u = Task(id=m_idmax['idmax'] + 1, title=task_title, end_time=end_time, start_time=start_time, pid=pre_task_id,
+            u = Task(id=m_idmax['idmax'] + 1, title=task_title, end_time=end_time, start_time=start_time,
+                     pid=pre_task_id,
                      content=content)
             u.save()
             u2 = TaskUserRelation(user_id=user_id, task_id=u.id)
@@ -496,14 +522,14 @@ def TaskSonDoApi(request):
             }
             return HttpResponse(json.dumps(response), content_type="application/json")
         else:
-            return HttpResponse(json.dumps({"message":"请登录"}), content_type="application/json")
+            return HttpResponse(json.dumps({"message": "请登录", "code": -1}), content_type="application/json")
     else:
 
         return HttpResponse("请用post方式访问")
 
 
 def TaskinQuiryDoApi(request):
-    # {
+    # { 7
     #     "code": "20000"
     #             "flag": "true"
     #                     "message":"查询成功"
@@ -522,48 +548,60 @@ def TaskinQuiryDoApi(request):
         code = request.POST.get('code')
         state = int(request.POST.get('state'))  # 1完成 2未完成 3参与 4指派
         user_id = request.POST.get('user_id')
+        page = request.POST.get('page')
+        pagesize = request.POST.get('pagesize')
         token = request.POST.get('token')
         if check_token(token):
             if state == 1:
-                u_set = Task.objects.filter(state=1, taskuserrelation__user_id=user_id).values("id", "title", "start_time",
+                u_set = Task.objects.filter(state=1, taskuserrelation__user_id=user_id).values("id", "title",
+                                                                                               "start_time",
                                                                                                "end_time", "pid",
                                                                                                "appointor__user_name",
                                                                                                "type__type", "progress",
-                                                                                               "department_id")
+                                                                                               "department__name")
+                total = Task.objects.filter(state=1, taskuserrelation__user_id=user_id).count()
                 # pid缺外键
                 # 持续时间自己算
             elif state == 2:
-                u_set = Task.objects.filter(state=2, taskuserrelation__user_id=user_id).values("id", "title", "start_time",
+                u_set = Task.objects.filter(state=2, taskuserrelation__user_id=user_id).values("id", "title",
+                                                                                               "start_time",
                                                                                                "end_time", "pid",
                                                                                                "appointor__user_name",
                                                                                                "type__type", "progress",
-                                                                                               "department_id")
+                                                                                               "department__name")
+                total = Task.objects.filter(state=2, taskuserrelation__user_id=user_id).count()
             elif state == 3:
                 u_set = Task.objects.filter(taskuserrelation__user_id=user_id).values("id", "title", "start_time",
                                                                                       "end_time", "pid",
-                                                                                      "appointor__user_name", "type__type",
-                                                                                      "progress", "department_id")
+                                                                                      "appointor__user_name",
+                                                                                      "type__type",
+                                                                                      "progress", "department__name")
+                total = Task.objects.filter(taskuserrelation__user_id=user_id).count()
             elif state == 4:
                 u_set = Task.objects.filter(appointor=user_id).values("id", "title", "start_time", "end_time", "pid",
                                                                       "appointor__user_name", "type__type", "progress",
-                                                                      "department_id")
+                                                                      "department__name")
+                total=Task.objects.filter(appointor=user_id).count()
 
+            paginator = Paginator(u_set, pagesize)  # 对象,每页多少条数据
+            page_x = paginator.page(page)  # 第一页的信息
             response = {
                 "code": "20000",
                 "flag": "true",
                 "message": "查询成功",
-                "data": list(u_set)
+                "total": total,
+                "data": list(page_x.object_list)
             }
             return HttpResponse(json.dumps(response, cls=CJsonEncoder), content_type="application/json")
         else:
-            return HttpResponse(json.dumps({"message":"请登录"}), content_type="application/json")
+            return HttpResponse(json.dumps({"message": "请登录", "code": -1}), content_type="application/json")
     else:
 
         return HttpResponse("请用post方式访问")
 
 
 def TaskMostDoApi(request):
-    # {
+    # { 8
     #     "code": "20000"
     #             "flag": "true"
     #                     "message":"查询成功"
@@ -594,9 +632,11 @@ def TaskMostDoApi(request):
         code = request.POST.get('code')
         task_id = request.POST.get('task_id')
         token = request.POST.get('token')
+        #这个也可以分页吗？？？？？？？？？？？？？？
         if check_token(token):
             u_obj = Task.objects.filter(id=task_id).values("title", "start_time", "end_time", "pid",
-                                                           "taskuserrelation__user__user_name", "type__type", "progress",
+                                                           "taskuserrelation__user__user_name", "type__type",
+                                                           "progress",
                                                            "department_id")
             data = u_obj[0]
             cy_user = TaskUserRelation.objects.filter(task_id=task_id).count()
@@ -612,19 +652,20 @@ def TaskMostDoApi(request):
                 "code": "20000",
                 "flag": "true",
                 "message": "查询成功",
+                "total": -1,
                 "data": data
             }
 
             return HttpResponse(json.dumps(response, cls=CJsonEncoder), content_type="application/json")
         else:
-            return HttpResponse(json.dumps({"message":"请登录"}), content_type="application/json")
+            return HttpResponse(json.dumps({"message": "请登录", "code": -1}), content_type="application/json")
     else:
 
         return HttpResponse("请用post方式访问")
 
 
 def TaskUrgeDoApi(request):
-    # {
+    # { 9
     #     "code": "20000"
     #             "flag": "true"
     #                     "message":"查询成功"
@@ -642,10 +683,10 @@ def TaskUrgeDoApi(request):
         if check_token(token):
             m_idmax = TaskMessRecord.objects.aggregate(idmax=Max('id'))
 
-            noti_user_id=TaskUserRelation.objects.filter(task_id=task_id)[0].user_id
+            noti_user_id = TaskUserRelation.objects.filter(task_id=task_id)[0].user_id
             u1 = UserInfo.objects.get(id=oper_user_id)
             u2 = UserInfo.objects.get(id=noti_user_id)
-            u = TaskMessRecord(id=m_idmax['idmax'] + 1, type=mess_type_id, noti_user=u2, oper_user=u1,
+            u = TaskMessRecord(type=mess_type_id, noti_user=u2, oper_user=u1,
                                task_id=task_id, time=datetime.datetime.now())
             # 为什么没有操作人
             u.save()
@@ -658,14 +699,14 @@ def TaskUrgeDoApi(request):
 
             return HttpResponse(json.dumps(response), content_type="application/json")
         else:
-            return HttpResponse(json.dumps({"message":"请登录"}), content_type="application/json")
+            return HttpResponse(json.dumps({"message": "请登录", "code": -1}), content_type="application/json")
     else:
 
         return HttpResponse("请用post方式访问")
 
 
 def TaskStatisticsDoApi(request):
-    # {
+    # { 10
     #     "code": "20000"
     #             "flag": "true"
     #                     "message":"查询成功"
@@ -684,9 +725,10 @@ def TaskStatisticsDoApi(request):
         user_id = request.POST.get('user_id')
         token = request.POST.get('token')
         if check_token(token):
-            p_obj=PartyUserRelation.objects.filter(user_id=user_id)
+            p_obj = PartyUserRelation.objects.filter(user_id=user_id)
             d_obj = Task.objects.filter(taskuserrelation__user__partyuserrelation=user_id)
-            #这样也可以  Task.objects.filter(taskuserrelation__user_id=1)[0].department.name
+
+            # 这样也可以  Task.objects.filter(taskuserrelation__user_id=1)[0].department.name
             response = {
                 "code": "20000",
                 "flag": "true",
@@ -701,7 +743,7 @@ def TaskStatisticsDoApi(request):
 
             return HttpResponse(json.dumps(response), content_type="application/json")
         else:
-            return HttpResponse(json.dumps({"message":"请登录"}), content_type="application/json")
+            return HttpResponse(json.dumps({"message": "请登录", "code": -1}), content_type="application/json")
     else:
 
         return HttpResponse("请用post方式访问")
@@ -729,22 +771,28 @@ def TaskForDoApi(request):
         code = request.POST.get('code')
         department_id = request.POST.get('department_id')
         token = request.POST.get('token')
+        page = request.POST.get('page')
+        pagesize = request.POST.get('pagesize')
         if check_token(token):
             u_set = Task.objects.filter(department_id=department_id).values("id", "title", "start_time", "end_time",
                                                                             "source__source",
                                                                             "appointor__user_name", "progress",
                                                                             "department__name"
                                                                             )
+            paginator = Paginator(u_set, pagesize)  # 对象,每页多少条数据
+            page_x = paginator.page(page)  # 第一页的信息
             response = {
                 "code": "20000",
                 "flag": "true",
                 "message": "查询成功",
-                "data": list(u_set)
+                "total":Task.objects.filter(department_id=department_id).count(),
+                "data": list(page_x.object_list)
+
             }
 
             return HttpResponse(json.dumps(response, cls=CJsonEncoder), content_type="application/json")
         else:
-            return HttpResponse(json.dumps({"message":"请登录"}), content_type="application/json")
+            return HttpResponse(json.dumps({"message": "请登录", "code": -1}), content_type="application/json")
     else:
 
         return HttpResponse("请用post方式访问")
@@ -775,18 +823,184 @@ def TaskFortionDoApi(request):
         # 缺外键
         user_id = request.POST.get('user_id')
         token = request.POST.get('token')
+        page = request.POST.get('page')
+        pagesize = request.POST.get('pagesize')
         if check_token(token):
-            d_set = Task.objects.filter(taskuserrelation__user__partyuserrelation=user_id).values("id","title","start_time","end_time","pid","appointor__user_name","type__type","progress","department__name")
+            d_set = Task.objects.filter(taskuserrelation__user__partyuserrelation=user_id).values("id", "title",
+                                                                                                  "start_time",
+                                                                                                  "end_time", "pid__title",
+                                                                                                  "appointor__user_name",
+                                                                                                  "type__type",
+                                                                                                  "progress",
+                                                                                                  "department__name")
+            paginator = Paginator(d_set, pagesize)  # 对象,每页多少条数据
+            page_x = paginator.page(page)  # 第一页的信息
             response = {
                 "code": "20000",
                 "flag": "true",
                 "message": "查询成功",
-                "data": list(d_set)
+                "total": Task.objects.filter(taskuserrelation__user__partyuserrelation=user_id).count(),
+                "data": list(page_x.object_list)
             }
 
             return HttpResponse(json.dumps(response, cls=CJsonEncoder), content_type="application/json")
         else:
-            return HttpResponse(json.dumps({"message":"请登录"}), content_type="application/json")
+            return HttpResponse(json.dumps({"message": "请登录", "code": -1}), content_type="application/json")
+    else:
+
+        return HttpResponse("请用post方式访问")
+
+
+#功能性接口需要分页吗？？？？？？？？？？？？？
+def TaskProgressApi(request):
+    # 13、任务完成接口
+    # 上传：任务id，用户id，完成进度
+    # 返回：是否成功
+
+    if request.method == "POST":
+
+        code = request.POST.get('code')
+        task_id = request.POST.get('task_id')
+        user_id = request.POST.get('user_id')
+        progress = request.POST.get('progress')
+        token = request.POST.get('token')
+        if check_token(token):
+            u_obj=Task.objects.filter(id=task_id,taskuserrelation__user_id=user_id)
+            if u_obj.exists():
+                u_obj.update(progress=progress)
+                response = {
+                    "code": "20000",
+                    "flag": "true",
+                    "message": "修改成功",
+                    "is_succeed": "1"
+                }
+            else:
+                response = {
+                    "code": "20000",
+                    "flag": "flase",
+                    "message": "用户或者任务id不存在",
+                    "is_succeed": "-1"
+                }
+
+
+            return HttpResponse(json.dumps(response), content_type="application/json")
+        else:
+            return HttpResponse(json.dumps({"message": "请登录", "code": -1}), content_type="application/json")
+    else:
+
+        return HttpResponse("请用post方式访问")
+
+
+def TaskTypeApi(request):
+    # 14、任务类型查询
+    # 上传：
+    # 返回：任务类型id，任务类型
+
+    if request.method == "POST":
+        token = request.POST.get('token')
+        if check_token(token):
+            u_set=TaskType.objects.all().values()
+            response = {
+                "code": "20000",
+                "flag": "true",
+                "message": "查询成功",
+                "data": list(u_set)
+            }
+
+
+            return HttpResponse(json.dumps(response), content_type="application/json")
+        else:
+            return HttpResponse(json.dumps({"message": "请登录", "code": -1}), content_type="application/json")
+    else:
+
+        return HttpResponse("请用post方式访问")
+
+
+def TaskPriorityApi(request):
+    # 15、任务优先级查询
+    # 上传：
+    # 返回：任务优先级id，任务优先级类型
+
+    if request.method == "POST":
+        token = request.POST.get('token')
+        if check_token(token):
+            u_set = TaskPriority.objects.all().values()
+            response = {
+                "code": "20000",
+                "flag": "true",
+                "message": "查询成功",
+                "data": list(u_set)
+            }
+
+            return HttpResponse(json.dumps(response), content_type="application/json")
+        else:
+            return HttpResponse(json.dumps({"message": "请登录", "code": -1}), content_type="application/json")
+    else:
+
+        return HttpResponse("请用post方式访问")
+
+
+def TaskStateApi(request):
+    # 16、任务状态查询
+    # 上传：
+    # 返回：任务状态id，任务状态
+
+    if request.method == "POST":
+        token = request.POST.get('token')
+        if check_token(token):
+            u_set = TaskState.objects.all().values()
+            response = {
+                "code": "20000",
+                "flag": "true",
+                "message": "查询成功",
+                "data": list(u_set)
+            }
+
+            return HttpResponse(json.dumps(response), content_type="application/json")
+        else:
+            return HttpResponse(json.dumps({"message": "请登录", "code": -1}), content_type="application/json")
+    else:
+
+        return HttpResponse("请用post方式访问")
+
+def TaskSourceApi(request):
+    # 17 任务来源查询
+
+    if request.method == "POST":
+        token = request.POST.get('token')
+        if check_token(token):
+            u_set = TaskSource.objects.all().values()
+            response = {
+                "code": "20000",
+                "flag": "true",
+                "message": "查询成功",
+                "data": list(u_set)
+            }
+
+            return HttpResponse(json.dumps(response), content_type="application/json")
+        else:
+            return HttpResponse(json.dumps({"message": "请登录", "code": -1}), content_type="application/json")
+    else:
+
+        return HttpResponse("请用post方式访问")
+
+
+def TaskProgRecordApi(request):
+    #18 任务动态查询
+    if request.method == "POST":
+        token = request.POST.get('token')
+        if check_token(token):
+            u_set = TaskProgRecord.objects.filter(is_baomi=1).values("id","task_id","user_id","progress_type__progress_type","annex_id","time")
+            response = {
+                "code": "20000",
+                "flag": "true",
+                "message": "查询成功",
+                "data": list(u_set)
+            }
+
+            return HttpResponse(json.dumps(response,cls=CJsonEncoder), content_type="application/json")
+        else:
+            return HttpResponse(json.dumps({"message": "请登录", "code": -1}), content_type="application/json")
     else:
 
         return HttpResponse("请用post方式访问")

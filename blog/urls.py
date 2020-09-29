@@ -22,5 +22,14 @@ urlpatterns = [
     path('webname/taskfor.do', views.TaskForDoApi),
     path('webname/taskfortion.do', views.TaskFortionDoApi),
 
+    path('webname/taskprogress.do', views.TaskProgressApi),
+    path('webname/tasktype.do', views.TaskTypeApi),
+    path('webname/taskpriority.do', views.TaskPriorityApi),
+    path('webname/taskstate.do', views.TaskStateApi),
+    path('webname/tasksource.do', views.TaskSourceApi),
+
+    path('webname/taskprogrecord.do', views.TaskProgRecordApi),
+
+
 
 ]

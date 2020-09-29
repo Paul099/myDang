@@ -35,7 +35,7 @@ class AuthUser(models.Model):
     last_login = models.DateTimeField(blank=True, null=True)
     is_superuser = models.IntegerField()
     username = models.CharField(unique=True, max_length=150)
-    first_name = models.CharField(max_length=30)
+    first_name = models.CharField(max_length=150)
     last_name = models.CharField(max_length=150)
     email = models.CharField(max_length=254)
     is_staff = models.IntegerField()
@@ -69,7 +69,6 @@ class AuthUserUserPermissions(models.Model):
 
 class Department(models.Model):
     name = models.CharField(max_length=255, blank=True, null=True)
-    pid = models.IntegerField(blank=True, null=True)
 
     class Meta:
         managed = False
@@ -132,18 +131,19 @@ class FileInfo(models.Model):
 
 
 class Meeting(models.Model):
-    sponsor = models.CharField(max_length=255, blank=True, null=True)
+    sponsor = models.ForeignKey('UserInfo', models.DO_NOTHING, db_column='sponsor', blank=True, null=True,related_name='sponsor')
     theme = models.CharField(max_length=255, blank=True, null=True)
     place = models.CharField(max_length=255, blank=True, null=True)
-    ratifier_field = models.ForeignKey('UserInfo', models.DO_NOTHING, db_column='ratifier\r\n_id', blank=True,
-                                       null=True)  # Field renamed to remove unsuitable characters.Fieldrenamedbecauseitendedwith '_'.
+    ratifier_field = models.ForeignKey('UserInfo', models.DO_NOTHING, db_column='ratifier\r\n_id', blank=True, null=True,related_name='ratifier')  # Field renamed to remove unsuitable characters. Field renamed because it ended with '_'.
     time = models.DateTimeField(blank=True, null=True)
+    meeting_type = models.ForeignKey('MeetingType', models.DO_NOTHING, blank=True, null=True)
+    state = models.ForeignKey('MeetingState', models.DO_NOTHING, blank=True, null=True)
+    content = models.CharField(max_length=255, blank=True, null=True)
+    department = models.ForeignKey(Department, models.DO_NOTHING, blank=True, null=True)
 
     class Meta:
         managed = False
         db_table = 'meeting'
-
-
 
 
 class MeetingAnswer(models.Model):
@@ -154,12 +154,29 @@ class MeetingAnswer(models.Model):
         db_table = 'meeting_answer'
 
 
+class MeetingState(models.Model):
+    state = models.CharField(max_length=255, blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'meeting_state'
+
+
+class MeetingType(models.Model):
+    meeting_type_id = models.AutoField(primary_key=True)
+    meeting_type = models.CharField(max_length=255, blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'meeting_type'
+
+
 class MeetingUserRelation(models.Model):
     meeting = models.ForeignKey(Meeting, models.DO_NOTHING, blank=True, null=True)
     user = models.ForeignKey('UserInfo', models.DO_NOTHING, blank=True, null=True)
     answer = models.ForeignKey(MeetingAnswer, models.DO_NOTHING, blank=True, null=True)
     reason = models.CharField(max_length=255, blank=True, null=True)
-    answer_0 = models.IntegerField(db_column='answer', blank=True, null=True)  # Field renamed because of name conflict.
+    answer_0 = models.CharField(db_column='answer', max_length=255, blank=True, null=True)  # Field renamed because of name conflict.
     answer_remake = models.CharField(max_length=255, blank=True, null=True)
     is_sign = models.IntegerField(blank=True, null=True)
     time_sign = models.TimeField(blank=True, null=True)
@@ -190,7 +207,7 @@ class ObserRoleRelation(models.Model):
 
 class ObservationList(models.Model):
     observation_point = models.CharField(max_length=255, blank=True, null=True)
-    pid = models.IntegerField(blank=True, null=True)
+    pid = models.ForeignKey('self', models.DO_NOTHING, db_column='pid', blank=True, null=True)
 
     class Meta:
         managed = False
@@ -199,7 +216,7 @@ class ObservationList(models.Model):
 
 class PartyBranch(models.Model):
     party_branch = models.CharField(max_length=255, blank=True, null=True)
-    pid = models.IntegerField(blank=True, null=True)
+    pid = models.ForeignKey('self', models.DO_NOTHING, db_column='pid', blank=True, null=True)
 
     class Meta:
         managed = False
@@ -223,22 +240,22 @@ class ProgressType(models.Model):
         db_table = 'progress_type'
 
 
-class RespDepRelation(models.Model):
-    resp = models.ForeignKey('RespList', models.DO_NOTHING, blank=True, null=True)
-    department = models.ForeignKey(Department, models.DO_NOTHING, blank=True, null=True)
-
-    class Meta:
-        managed = False
-        db_table = 'resp_dep_relation'
-
-
 class RespList(models.Model):
     content = models.CharField(max_length=255, blank=True, null=True)
-    pid = models.IntegerField(blank=True, null=True)
+    pid = models.ForeignKey('self', models.DO_NOTHING, db_column='pid', blank=True, null=True)
 
     class Meta:
         managed = False
         db_table = 'resp_list'
+
+
+class RespPartyRelation(models.Model):
+    resp = models.ForeignKey(RespList, models.DO_NOTHING, blank=True, null=True)
+    party = models.ForeignKey(PartyBranch, models.DO_NOTHING, blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'resp_party_relation'
 
 
 class RespRoleRelation(models.Model):
@@ -269,7 +286,7 @@ class RoleUserRelation(models.Model):
 
 class Task(models.Model):
     content = models.CharField(max_length=255, blank=True, null=True)
-    pid = models.IntegerField(blank=True, null=True)
+    pid = models.ForeignKey('self', models.DO_NOTHING, db_column='pid', blank=True, null=True)
     department = models.ForeignKey(Department, models.DO_NOTHING, blank=True, null=True)
     state = models.ForeignKey('TaskState', models.DO_NOTHING, blank=True, null=True)
     source = models.ForeignKey('TaskSource', models.DO_NOTHING, blank=True, null=True)
@@ -305,8 +322,8 @@ class TaskJurisdiction(models.Model):
 
 class TaskMessRecord(models.Model):
     task = models.ForeignKey(Task, models.DO_NOTHING, blank=True, null=True)
-    oper_user = models.ForeignKey('UserInfo', models.DO_NOTHING, blank=True, null=True,related_name='noti')
-    noti_user = models.ForeignKey('UserInfo', models.DO_NOTHING, blank=True, null=True,related_name='oper')
+    oper_user = models.ForeignKey('UserInfo', models.DO_NOTHING, blank=True, null=True,related_name='oper')
+    noti_user = models.ForeignKey('UserInfo', models.DO_NOTHING, blank=True, null=True,related_name='noti')
     type = models.IntegerField(blank=True, null=True)
     time = models.DateTimeField(blank=True, null=True)
 
@@ -329,6 +346,7 @@ class TaskProgRecord(models.Model):
     progress_type = models.ForeignKey(ProgressType, models.DO_NOTHING, blank=True, null=True)
     annex = models.ForeignKey(TaskAnnex, models.DO_NOTHING, blank=True, null=True)
     time = models.DateTimeField(blank=True, null=True)
+    is_baomi = models.IntegerField(blank=True, null=True)
 
     class Meta:
         managed = False
@@ -375,6 +393,7 @@ class UserInfo(models.Model):
     job_id = models.IntegerField(blank=True, null=True)
     is_ratifier = models.IntegerField(blank=True, null=True)
     vx_code = models.CharField(max_length=255, blank=True, null=True)
+    name = models.CharField(max_length=255, blank=True, null=True)
 
     class Meta:
         managed = False

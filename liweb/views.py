@@ -210,16 +210,28 @@ def ResponsibilityListPartyDoApi(request):
 
             pid = PartyBranch.objects.filter(Q(partyuserrelation__user_id=userid)&~Q(party_branch__startswith='校')).first().pid_id#通过 Q（__startswith='校'）筛选出不是校党委的支部的pid
             #pid= PartyBranch.objects.filter(partyuserrelation__user_id=userid).first().pid_id#)&~Q(party_branch__startswith='校')
-            p = PartyBranch.objects.filter(Q(partyuserrelation__user_id=userid)|Q(id= pid)).values('party_branch',
-                                                                                                   'resppartyrelation__resp__content',
-                                                                                                   'obserpartyrelation__observation__observation_point').distinct()
+            # p = PartyBranch.objects.filter(Q(partyuserrelation__user_id=userid)|Q(id= pid)).values('party_branch',
+            #                                                                                        'resppartyrelation__resp__content',
+            #                                                                                        'obserpartyrelation__observation__observation_point').distinct()
+            partys = PartyBranch.objects.filter(Q(partyuserrelation__user_id=userid)|Q(id= pid)).distinct()
+            partys_num = partys.count()
+            p = []
+            data = []
+            for i in range(partys_num):  #空列表直接赋值失败，需要append
+                p.append(i)
+                data.append(i)
+            for x  in range(partys_num):
+                p[x] = PartyBranch.objects.filter(id=partys[x].id).distinct()
+                data[x]= {'party_branch': p[x].first().party_branch,
+                           'resppartyrelation__resp__content':list(p[x].values_list('resppartyrelation__resp__content')),
+                           'obserpartyrelation__observation__observation_point':list(p[x].values_list('obserpartyrelation__observation__observation_point'))}
 
-            paginator =Paginator(p,current_page_size)
+            paginator =Paginator(data,current_page_size)
             total = paginator.count
             page_x = paginator.page(number=current_page_num).object_list
 
             response = {}
-            if p.exists():
+            if partys.exists():
                 response={
                     'message':'查询成功',
                     'flag':'true',
@@ -264,22 +276,41 @@ def ResponsibilityListRoleDoApi(request):
             current_page_num = request.POST.get('page')
             current_page_size = request.POST.get('pagesize')
             userid = request.POST.get('user_id')
-            r = RoleInfo.objects.filter(roleuserrelation__user_id=userid).values('role',
-                                                                                 'resprolerelation__resp__content',
-                                                                                 'obserrolerelation__observation__observation_point').distinct()
 
-            paginator =Paginator(r,current_page_size)
+            # r = RoleInfo.objects.filter(roleuserrelation__user_id=userid).values('role',
+            #                                                                      'resprolerelation__resp__content',
+            #                                                                      'obserrolerelation__observation__observation_point').distinct()
+            roles = RoleInfo.objects.filter(roleuserrelation__user_id=userid).distinct()
+            roles_num = roles.count()
+            r = []
+            data = []
+            for i in range(roles_num):  #空列表直接赋值失败，需要append
+                r.append(i)
+                data.append(i)
+            for x  in range(roles_num):
+                r[x] = RoleInfo.objects.filter(id=roles[x].id).distinct()
+                data[x]= {'role': r[x].first().role,
+                           'resprolerelation__resp__content':list(r[x].values_list('resprolerelation__resp__content')),
+                           'obserrolerelation__observation__observation_point':list(r[x].values_list('obserrolerelation__observation__observation_point'))}
+
+
+
+
+
+
+            paginator =Paginator(data,current_page_size)
             total = paginator.count
             page_x = paginator.page(number=current_page_num).object_list
             response = {}
-            if r.exists():
+            if roles.exists():
                 response={
                     'message':'查询成功',
                     'flag':'true',
                     'code':20000,
                     'total':total,
-                    'data':list(page_x)
+                    'data':list(page_x)#data
                 }
+
             else:
                 response={
                     'message':'查询失败',
@@ -599,49 +630,6 @@ def ManagamentAddDoApi(request):
 
 
 
-# #、5.5接口被包括进5.4接口中完成邀请
-# #5--5、邀请参会人接口
-# def ManagamentInviteDoApi(request):
-#     # {
-#     #     "code":"20000"
-#     #              "flag":"true"
-#     #                    "message":"添加成功"
-#     #                           "data":{
-#     #              'is succeed':1
-#     # }
-#     if request.method == "POST":
-#         token = request.POST.get('token')
-#         code = request.POST.get('code')
-#         if check_token(token):
-#             meetingid = request.POST.get('meeting_id')
-#             userid = request.POST.get('user_id')
-#
-#             mu =MeetingUserRelation.objects.filter(user_id=userid,meeting_id=meetingid)
-#             response = {}
-#             if  mu.exists() :
-#
-#                 response['message'] = '该用户已被邀请'
-#                 response['flag'] = 'flase'
-#                 response['code'] = 40000
-#                 data = {}
-#
-#             else :
-#
-#                 m = MeetingUserRelation(user_id=userid, meeting_id=meetingid)
-#                 m.save()
-#                 response['message'] = '邀请成功'
-#                 response['flag'] = 'true'
-#                 response['code'] = 20000
-#                 data = {'is succeed':1
-#                         }
-#             response['data'] = data
-#             return HttpResponse(json.dumps(response), content_type="application/json")
-#
-#         else:
-#             return HttpResponse(json.dumps({"code":code,"message":"请登录"}), content_type="application/json")
-#
-#     else:
-#         return HttpResponse("请用post方式访问")
 
 
 
