@@ -361,7 +361,7 @@ def ManagamentDoApi(request):
                 response['message'] = '查询成功'
                 response['flag'] = 'true'
                 response['code'] = 20000
-                data = {'name': u[0].user_name,
+                data = {'name': u[0].name,
                         'meeting_num': u[0].meetinguserrelation_set.count(),
                         'wd_meeting_num':m.count(),
                         }
