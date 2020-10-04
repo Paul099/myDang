@@ -8,6 +8,7 @@ from django.core import signing
 from django.core.cache import cache
 from django.utils import timezone
 from django.core.paginator import Paginator, PageNotAnInteger, InvalidPage, EmptyPage
+from itertools import chain
 
 
 
@@ -183,10 +184,10 @@ def ResponsibilityDoApi(request):
 
 
 
+
 #3--2.单位责任清单接口
 def ResponsibilityListPartyDoApi(request):
-    # [
-    #     {
+    # [    #     {
     #         "party_branch": "信息学院党支部",
     #         "par_resp ": "XXXXXX",
     #         "par_obs ": "XXXXXXXXXXX",
@@ -223,8 +224,8 @@ def ResponsibilityListPartyDoApi(request):
             for x  in range(partys_num):
                 p[x] = PartyBranch.objects.filter(id=partys[x].id).distinct()
                 data[x]= {'party_branch': p[x].first().party_branch,
-                           'resppartyrelation__resp__content':list(p[x].values_list('resppartyrelation__resp__content')),
-                           'obserpartyrelation__observation__observation_point':list(p[x].values_list('obserpartyrelation__observation__observation_point'))}
+                           'resppartyrelation__resp__content':list(chain.from_iterable(list(p[x].values_list('resppartyrelation__resp__content')))),
+                           'obserpartyrelation__observation__observation_point':list(chain.from_iterable(list(p[x].values_list('obserpartyrelation__observation__observation_point'))))}
 
             paginator =Paginator(data,current_page_size)
             total = paginator.count
@@ -290,8 +291,8 @@ def ResponsibilityListRoleDoApi(request):
             for x  in range(roles_num):
                 r[x] = RoleInfo.objects.filter(id=roles[x].id).distinct()
                 data[x]= {'role': r[x].first().role,
-                           'resprolerelation__resp__content':list(r[x].values_list('resprolerelation__resp__content')),
-                           'obserrolerelation__observation__observation_point':list(r[x].values_list('obserrolerelation__observation__observation_point'))}
+                           'resprolerelation__resp__content':list(chain.from_iterable(list(r[x].values_list('resprolerelation__resp__content')))),
+                           'obserrolerelation__observation__observation_point':list(chain.from_iterable(list(r[x].values_list('obserrolerelation__observation__observation_point'))))}
 
 
 
@@ -327,8 +328,149 @@ def ResponsibilityListRoleDoApi(request):
 
         return HttpResponse("请用post方式访问")
 
+#3--2.单位责任清单接口
+def ResponsibilityListPartyDoApi(request):
+    # [
+    #     {
+    #         "party_branch": "信息学院党支部",
+    #         "par_resp ": "XXXXXX",
+    #         "par_obs ": "XXXXXXXXXXX",
+    #     }
+    #     {
+    #         "party_branch": "电子系党支部",
+    #         "par_resp ": "XXXXXX",
+    #         "par_obs ": "XXXXXXXXXXX",
+    #     }
+    # ……
+    # ]
+
+    if request.method == "POST":
+        token = request.POST.get('token')
+        code = request.POST.get('code')
+        if check_token(token):
+            current_page_num = request.POST.get('page')
+            current_page_size = request.POST.get('pagesize')
+            userid = request.POST.get('user_id')
 
 
+            pid = PartyBranch.objects.filter(Q(partyuserrelation__user_id=userid)&~Q(party_branch__startswith='校')).first().pid_id#通过 Q（__startswith='校'）筛选出不是校党委的支部的pid
+            #pid= PartyBranch.objects.filter(partyuserrelation__user_id=userid).first().pid_id#)&~Q(party_branch__startswith='校')
+            # p = PartyBranch.objects.filter(Q(partyuserrelation__user_id=userid)|Q(id= pid)).values('party_branch',
+            #                                                                                        'resppartyrelation__resp__content',
+            #                                                                                        'obserpartyrelation__observation__observation_point').distinct()
+            partys = PartyBranch.objects.filter(Q(partyuserrelation__user_id=userid)|Q(id= pid)).distinct()
+            partys_num = partys.count()
+            p = []
+            data = []
+            for i in range(partys_num):  #空列表直接赋值失败，需要append
+                p.append(i)
+                data.append(i)
+            for x  in range(partys_num):
+                p[x] = PartyBranch.objects.filter(id=partys[x].id).distinct()
+                data[x]= {'party_branch': p[x].first().party_branch,
+                           'resppartyrelation__resp__content':list(chain.from_iterable(list(p[x].values_list('resppartyrelation__resp__content')))),
+                           'obserpartyrelation__observation__observation_point':list(chain.from_iterable(list(p[x].values_list('obserpartyrelation__observation__observation_point'))))}
+
+            paginator =Paginator(data,current_page_size)
+            total = paginator.count
+            page_x = paginator.page(number=current_page_num).object_list
+
+            response = {}
+            if partys.exists():
+                response={
+                    'message':'查询成功',
+                    'flag':'true',
+                    'code':20000,
+                    'total':total,
+                    'data':list(page_x)
+                }
+            else:
+                response={
+                    'message':'查询失败',
+                    'flag':'flase',
+                    'code':40000,
+                    'data':{}
+                }
+
+            return HttpResponse(json.dumps(response), content_type="application/json")
+
+        else:
+            return HttpResponse(json.dumps({"code":code,"message": "请登录"}), content_type="application/json")
+
+    else:
+        return HttpResponse("请用post方式访问")
+
+
+#3--3.我的责任清单接口
+def ResponsibilityListRoleDoApi(request):
+    # {
+    #     "code":"20000"
+    #              "flag":"true"
+    #                    "message":"查询成功"
+    #                           "data":{
+
+    #     "party_branch": "信息学院党支部",
+    #     "par_resp ": "XXXXXX",
+    #     "par_obs ": "XXXXXXXXXXX"
+    #
+    # }
+    if request.method == "POST":
+        token = request.POST.get('token')
+        code = request.POST.get('code')
+        if check_token(token):
+            current_page_num = request.POST.get('page')
+            current_page_size = request.POST.get('pagesize')
+            userid = request.POST.get('user_id')
+
+            # r = RoleInfo.objects.filter(roleuserrelation__user_id=userid).values('role',
+            #                                                                      'resprolerelation__resp__content',
+            #                                                                      'obserrolerelation__observation__observation_point').distinct()
+            roles = RoleInfo.objects.filter(roleuserrelation__user_id=userid).distinct()
+            roles_num = roles.count()
+            r = []
+            data = []
+            for i in range(roles_num):  #空列表直接赋值失败，需要append
+                r.append(i)
+                data.append(i)
+            for x  in range(roles_num):
+                r[x] = RoleInfo.objects.filter(id=roles[x].id).distinct()
+                data[x]= {'role': r[x].first().role,
+                           'resprolerelation__resp__content':list(chain.from_iterable(list(r[x].values_list('resprolerelation__resp__content')))),
+                           'obserrolerelation__observation__observation_point':list(chain.from_iterable(list(r[x].values_list('obserrolerelation__observation__observation_point'))))}
+
+
+
+
+
+
+            paginator =Paginator(data,current_page_size)
+            total = paginator.count
+            page_x = paginator.page(number=current_page_num).object_list
+            response = {}
+            if roles.exists():
+                response={
+                    'message':'查询成功',
+                    'flag':'true',
+                    'code':20000,
+                    'total':total,
+                    'data':list(page_x)#data
+                }
+
+            else:
+                response={
+                    'message':'查询失败',
+                    'flag':'flase',
+                    'code':40000,
+                    'data':{}
+                }
+
+            return HttpResponse(json.dumps(response), content_type="application/json")
+        else:
+            return HttpResponse(json.dumps({"code":code,"message":"请登录"}), content_type="application/json")
+
+    else:
+
+        return HttpResponse("请用post方式访问")
 
 
 
@@ -983,7 +1125,7 @@ def UserInquireDoApi(request):
         if check_token(token):
             current_page_num = request.POST.get('page')
             current_page_size = request.POST.get('pagesize')
-            u = UserInfo.objects.values('id','user_name','department_id','department__name').order_by('id').distinct()
+            u = UserInfo.objects.values('id','name','department_id','department__name').order_by('id').distinct()
             paginator = Paginator(u,current_page_size)
             total = paginator.count
             page_x = paginator.page(number=current_page_num).object_list# current_page_num
