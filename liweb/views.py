@@ -656,7 +656,7 @@ def ManagamentSpecificDoApi(request):
                         'department':m[0].department.name,
                         'time':m[0].time,
                         'place':m[0].place,
-                        'sponsor':m[0].sponsor.user_name,#修改了sponsor的查询方式
+                        'sponsor':m[0].sponsor.name,#修改了sponsor的查询方式
                         'type':m[0].meeting_type.meeting_type,
                         'state':m[0].state_id,
                         'tz_user':list(u.values_list('user_name')),
@@ -704,9 +704,9 @@ def ManagamentAddDoApi(request):
             sponsor = request.POST.get('sponsor')
             type = request.POST.get('type')
             stateid =request.POST.get('state_id')#########
-            #userid = request.POST.get('user_id')#peoNames = request.POST.getlist('peoName', [])
+            user = request.POST.get('user_id')#peoNames = request.POST.getlist('peoName', [])
 
-            userid = request.POST.getlist('user_id[]')
+            #userid = request.POST.getlist('user_id[]')
             content = request.POST.get('content')######
 
             #d_idmax = Department.objects.aggregate(idmax=Max('id'))
@@ -730,7 +730,7 @@ def ManagamentAddDoApi(request):
             mu_start = MeetingUserRelation.objects.count()
 
             #mu = MeetingUserRelation.objects.create( meeting_id=m.id,user_id=userid)#添加单个数据，不能添加数组（列表）数据
-
+            userid = user.split(",")
             l = len(userid)
             for x in range(l):
                  if userid[x]:
@@ -948,7 +948,7 @@ def ManagamentAnswerDoApi(request):
             meetingid = request.POST.get('meeting_id')
             reason = request.POST.get('reason')
 
-            m_u = MeetingUserRelation.objects.filter(user_id=userid,meeting_id=meetingid,answer_id=None,reason=None)
+            m_u = MeetingUserRelation.objects.filter(user_id=userid,meeting_id=meetingid,answer_id=None,)#reason=None)
             #m_u.update()更新应该在判断之后
             # m = Meeting.objects.filter(meetinguserrelation__user_id=userid[0].id,place=place,id=meetingid,time__gte=time)
 
@@ -966,7 +966,7 @@ def ManagamentAnswerDoApi(request):
                         }
 
             else:
-                response['message'] = '应答失败'
+                response['message'] = '会议已被应答或不存在'
                 response['flag'] = 'flase'
                 response['code'] = 40000
                 data = {}
