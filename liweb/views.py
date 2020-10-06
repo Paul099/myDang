@@ -583,7 +583,7 @@ def ManagamentInquireDoApi(request):
                 response = {
                     "code": "20000",
                     "flag": "true",
-                    "message": "查询失败",
+                    "message": "查询无记录",
                     "data": {}
                 }
 
@@ -659,7 +659,7 @@ def ManagamentSpecificDoApi(request):
                         'sponsor':m[0].sponsor.name,#修改了sponsor的查询方式
                         'type':m[0].meeting_type.meeting_type,
                         'state':m[0].state_id,
-                        'tz_user':list(u.values_list('user_name')),
+                        'tz_user':list(u.values_list('user_name')),#list(chain.from_iterable(list(u.values_list('name'))))连接数组里面的元组
                         'cj_user': list(u.filter(meetinguserrelation__answer=1).values_list('user_name')),
                         'qj_user':list(u.exclude(meetinguserrelation__answer=1).values_list('user_name')),
                         'answer':mu[0].answer.answer,
@@ -713,16 +713,17 @@ def ManagamentAddDoApi(request):
             #d = Department.objects.create(id =d_idmax['idmax']+1,name=department)
             # d = Department.objects.create( name=department)
             # d.save()
-            m_t = MeetingType.objects.create(meeting_type=type)
-            m_t.save()
+            # m_t = MeetingType.objects.create(meeting_type=type)
+            # m_t.save()
+            m_t = MeetingType.objects.filter(meeting_type=type).first()
+            user_sponsor = UserInfo.objects.filter(name=sponsor).first()
             m = Meeting.objects.create( theme=theme,
                                         department_id=department,
                                         time=time,
                                         place=place,
-                                        sponsor_id=sponsor,
+                                        sponsor=user_sponsor.id,
                                         meeting_type_id=m_t.meeting_type_id,
-                                        state_id=stateid,
-                                        content=content ,
+                                        content=content,
                                         )
             #u = UserInfo.objects.create(id = userid,department_id=d.id)
             #u.save()
@@ -748,7 +749,9 @@ def ManagamentAddDoApi(request):
                 response['message'] = '添加成功'
                 response['flag'] = 'true'
                 response['code'] = 20000
-                data = {'is_succeed':1
+                data = {'is_succeed':1,
+                        'mu_start':mu_start,
+                        'mu_end':mu_end
                         }
             else:
                 response['message'] = '添加失败'
@@ -948,9 +951,10 @@ def ManagamentAnswerDoApi(request):
             meetingid = request.POST.get('meeting_id')
             reason = request.POST.get('reason')
 
-            m_u = MeetingUserRelation.objects.filter(user_id=userid,meeting_id=meetingid,answer_id=None,)#reason=None)
+            #m_u = MeetingUserRelation.objects.filter(user_id=userid,meeting_id=meetingid,answer_id=None,)#reason=None)
             #m_u.update()更新应该在判断之后
             # m = Meeting.objects.filter(meetinguserrelation__user_id=userid[0].id,place=place,id=meetingid,time__gte=time)
+            m_u = MeetingUserRelation.objects.filter(user_id=userid,meeting_id=meetingid,)#bug：local时间需要在会议时间之前，加个Q查询
 
             response = {}
             if m_u.exists() :
@@ -966,7 +970,7 @@ def ManagamentAnswerDoApi(request):
                         }
 
             else:
-                response['message'] = '会议已被应答或不存在'
+                response['message'] = '应答失败'
                 response['flag'] = 'flase'
                 response['code'] = 40000
                 data = {}
@@ -1017,7 +1021,7 @@ def ManagamentTypeDoApi(request):#ManagamentTypeDoApi
                 response = {
                     "code": "20000",
                     "flag": "true",
-                    "message": "查询成功",
+                    "message": "查询失败",
                     "data": {}
                 }
 
