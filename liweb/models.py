@@ -35,7 +35,7 @@ class AuthUser(models.Model):
     last_login = models.DateTimeField(blank=True, null=True)
     is_superuser = models.IntegerField()
     username = models.CharField(unique=True, max_length=150)
-    first_name = models.CharField(max_length=30)
+    first_name = models.CharField(max_length=150)
     last_name = models.CharField(max_length=150)
     email = models.CharField(max_length=254)
     is_staff = models.IntegerField()
@@ -160,7 +160,6 @@ class MeetingState(models.Model):
     class Meta:
         managed = False
         db_table = 'meeting_state'
-
 
 
 class MeetingType(models.Model):
@@ -312,6 +311,16 @@ class TaskAnnex(models.Model):
         db_table = 'task_annex'
 
 
+class TaskAnnexRelation(models.Model):
+    task = models.ForeignKey(Task, models.DO_NOTHING, blank=True, null=True)
+    task_prog_record = models.ForeignKey('TaskProgRecord', models.DO_NOTHING, blank=True, null=True)
+    annex = models.ForeignKey(TaskAnnex, models.DO_NOTHING, blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'task_annex_relation'
+
+
 class TaskJurisdiction(models.Model):
     user_id = models.IntegerField(blank=True, null=True)
     department_id = models.IntegerField(blank=True, null=True)
@@ -345,8 +354,9 @@ class TaskProgRecord(models.Model):
     task = models.ForeignKey(Task, models.DO_NOTHING, blank=True, null=True)
     user = models.ForeignKey('UserInfo', models.DO_NOTHING, blank=True, null=True)
     progress_type = models.ForeignKey(ProgressType, models.DO_NOTHING, blank=True, null=True)
-    annex = models.ForeignKey(TaskAnnex, models.DO_NOTHING, blank=True, null=True)
+    text = models.CharField(max_length=255, blank=True, null=True)
     time = models.DateTimeField(blank=True, null=True)
+    is_baomi = models.IntegerField(blank=True, null=True)
 
     class Meta:
         managed = False

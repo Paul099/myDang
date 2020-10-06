@@ -209,11 +209,8 @@ def ResponsibilityListPartyDoApi(request):
             userid = request.POST.get('user_id')
 
 
-            pid = PartyBranch.objects.filter(Q(partyuserrelation__user_id=userid)&~Q(party_branch__startswith='校')).first().pid_id#通过 Q（__startswith='校'）筛选出不是校党委的支部的pid
-            #pid= PartyBranch.objects.filter(partyuserrelation__user_id=userid).first().pid_id#)&~Q(party_branch__startswith='校')
-            # p = PartyBranch.objects.filter(Q(partyuserrelation__user_id=userid)|Q(id= pid)).values('party_branch',
-            #                                                                                        'resppartyrelation__resp__content',
-            #                                                                                        'obserpartyrelation__observation__observation_point').distinct()
+            pid = PartyBranch.objects.filter(partyuserrelation__user_id=userid).first().pid_id#通过 Q（__startswith='校'）筛选出不是校党委的支部的pid
+
             partys = PartyBranch.objects.filter(Q(partyuserrelation__user_id=userid)|Q(id= pid)).distinct()
             partys_num = partys.count()
             p = []
@@ -293,11 +290,6 @@ def ResponsibilityListRoleDoApi(request):
                 data[x]= {'role': r[x].first().role,
                            'resprolerelation__resp__content':list(chain.from_iterable(list(r[x].values_list('resprolerelation__resp__content')))),
                            'obserrolerelation__observation__observation_point':list(chain.from_iterable(list(r[x].values_list('obserrolerelation__observation__observation_point'))))}
-
-
-
-
-
 
             paginator =Paginator(data,current_page_size)
             total = paginator.count
@@ -715,14 +707,16 @@ def ManagamentAddDoApi(request):
             # d.save()
             # m_t = MeetingType.objects.create(meeting_type=type)
             # m_t.save()
-            m_t = MeetingType.objects.filter(meeting_type=type).first()
-            user_sponsor = UserInfo.objects.filter(name=sponsor).first()
+            # d = Department.objects.filter(name__exact=department)#__exact 精确等于
+            # m_t = MeetingType.objects.filter(meeting_type__exact=type).first()
+            # user_sponsor = UserInfo.objects.filter(name__exact=sponsor).first()
+            u = UserInfo.objects.get(id=sponsor)
             m = Meeting.objects.create( theme=theme,
                                         department_id=department,
                                         time=time,
                                         place=place,
-                                        sponsor=user_sponsor.id,
-                                        meeting_type_id=m_t.meeting_type_id,
+                                        sponsor=u,
+                                        meeting_type_id=type,
                                         content=content,
                                         )
             #u = UserInfo.objects.create(id = userid,department_id=d.id)
@@ -750,8 +744,8 @@ def ManagamentAddDoApi(request):
                 response['flag'] = 'true'
                 response['code'] = 20000
                 data = {'is_succeed':1,
-                        'mu_start':mu_start,
-                        'mu_end':mu_end
+                        # 'mu_start':mu_start,
+                        # 'mu_end':mu_end
                         }
             else:
                 response['message'] = '添加失败'
