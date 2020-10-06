@@ -118,7 +118,7 @@ def dictfetchall(cursor):
 
 #----------------接口---------------#
 #3--1.责任数据统计接口
-def ResponsibilityDoApi(request):
+def ResponsibilityDoApi(request):#缺少数据的时候
     # {
     #     "code": "20000"
     #             "flag": "true"
@@ -690,7 +690,7 @@ def ManagamentAddDoApi(request):
         if check_token(token):
             #current_page_num = request.POST.get('page')
             theme = request.POST.get('theme')
-            department = request.POST.get('department_id')
+            departmentid = request.POST.get('department')
             time = request.POST.get('time')
             place = request.POST.get('place')
             sponsor = request.POST.get('sponsor')
@@ -710,14 +710,16 @@ def ManagamentAddDoApi(request):
             # d = Department.objects.filter(name__exact=department)#__exact 精确等于
             # m_t = MeetingType.objects.filter(meeting_type__exact=type).first()
             # user_sponsor = UserInfo.objects.filter(name__exact=sponsor).first()
+            # d = Department.objects.get(id=departmentid)
             u = UserInfo.objects.get(id=sponsor)
             m = Meeting.objects.create( theme=theme,
-                                        department_id=department,
                                         time=time,
                                         place=place,
                                         sponsor=u,
                                         meeting_type_id=type,
                                         content=content,
+                                        state_id=1,
+                                        department_id=departmentid,
                                         )
             #u = UserInfo.objects.create(id = userid,department_id=d.id)
             #u.save()
@@ -954,14 +956,18 @@ def ManagamentAnswerDoApi(request):
             if m_u.exists() :
                 if answerid==1 :
 
-                    m_u.update(answer_id=answerid,reason=reason)
+                    #m_u.update(answer_id=answerid,reason=reason)
+                    MeetingUserRelation.objects.get(id=m_u[0])
                 else:
                     m_u.update(answer_id=answerid)
+
                 response['message'] = '应答成功'
                 response['flag'] = 'true'
                 response['code'] = 20000
                 data = {'is_succeed':1
+
                         }
+
 
             else:
                 response['message'] = '应答失败'

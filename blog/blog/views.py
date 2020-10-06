@@ -929,7 +929,6 @@ def TaskProgressApi(request):
         return HttpResponse("请用post方式访问")
 
 
-
 def TaskTypeApi(request):
     # 14、任务类型查询
     # 上传：
