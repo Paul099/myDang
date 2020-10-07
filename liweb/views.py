@@ -660,9 +660,9 @@ def ManagamentSpecificDoApi(request):
                         'sponsor':m[0].sponsor.name,#修改了sponsor的查询方式
                         'type':m[0].meeting_type.meeting_type,
                         'state':m[0].state_id,
-                        'tz_user':list(chain.from_iterable(list(u.values_list('user_name')))),#list(chain.from_iterable(list(u.values_list('name'))))连接数组里面的元组
-                        'cj_user': list(chain.from_iterable(list(u.filter(meetinguserrelation__answer=1).values_list('user_name')))),
-                        'qj_user':list(chain.from_iterable(list(u.exclude(meetinguserrelation__answer=1).values_list('user_name')))),
+                        'tz_user':list(chain.from_iterable(list(u.values_list('user_name').distinct()))),#list(chain.from_iterable(list(u.values_list('name'))))连接数组里面的元组
+                        'cj_user': list(chain.from_iterable(list(u.filter(meetinguserrelation__answer=1).values_list('user_name').distinct()))),
+                        'qj_user':list(chain.from_iterable(list(u.exclude(meetinguserrelation__answer=1).values_list('user_name').distinct()))),
                         'answer':mu[0].answer.answer,
                         'content':m[0].content,
                         }
