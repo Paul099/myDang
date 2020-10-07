@@ -560,7 +560,8 @@ def ManagamentInquireDoApi(request):
             #                                                                                     'meeting__meeting_type__meeting_type',#添加了type表，需要查询跨表
             #                                                                                     'meeting__state__state',
             #                                                                                     ).distinct().order_by('id')
-            m_set = Meeting.objects.filter(state_id=stateid,department_id=departmentid).values('id','theme',
+            m_set = Meeting.objects.filter(state_id=stateid,department_id=departmentid).values('id',
+                                                                                               'theme',
                                                                                                'department__name',
                                                                                                'time',
                                                                                                'place',
@@ -584,7 +585,7 @@ def ManagamentInquireDoApi(request):
                     "code": "20000",
                     "flag": "true",
                     "message": "查询无记录",
-                    "data": {}
+                    "data": []
                 }
 
             return HttpResponse(json.dumps(response,cls=CJsonEncoder), content_type="application/json")
@@ -659,9 +660,9 @@ def ManagamentSpecificDoApi(request):
                         'sponsor':m[0].sponsor.name,#修改了sponsor的查询方式
                         'type':m[0].meeting_type.meeting_type,
                         'state':m[0].state_id,
-                        'tz_user':list(u.values_list('user_name')),#list(chain.from_iterable(list(u.values_list('name'))))连接数组里面的元组
-                        'cj_user': list(u.filter(meetinguserrelation__answer=1).values_list('user_name')),
-                        'qj_user':list(u.exclude(meetinguserrelation__answer=1).values_list('user_name')),
+                        'tz_user':list(chain.from_iterable(list(u.values_list('user_name')))),#list(chain.from_iterable(list(u.values_list('name'))))连接数组里面的元组
+                        'cj_user': list(chain.from_iterable(list(u.filter(meetinguserrelation__answer=1).values_list('user_name')))),
+                        'qj_user':list(chain.from_iterable(list(u.exclude(meetinguserrelation__answer=1).values_list('user_name')))),
                         'answer':mu[0].answer.answer,
                         'content':m[0].content,
                         }
