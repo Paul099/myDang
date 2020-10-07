@@ -34,7 +34,7 @@ urlpatterns = [
     path('webname/taskprogrecord.do', views.TaskProgRecordApi),
 
 
-    url(r'^book/(?P<path>.*)$', serve, {'document_root':'/Users/K/Downloads/myDang/blog/download'})
+    url(r'^download/(?P<path>.*)$', serve, {'document_root':'/home/ubuntu/myDang/blog/download'})
 
 
 ]

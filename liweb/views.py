@@ -140,11 +140,12 @@ def ResponsibilityDoApi(request):#缺少数据的时候
         if check_token(token):
             #current_page_num = request.POST.get('page')
             u= UserInfo.objects.filter(id=userid)
-            r= RoleInfo.objects.filter(id=u[0].roleuserrelation_set.first().role.id)
-            p= PartyBranch.objects.filter(id=u[0].partyuserrelation_set.first().party_branch.id)
+            #r= RoleInfo.objects.filter(id=u[0].roleuserrelation_set.first().role.id)
+            r = RoleInfo.objects.filter(roleuserrelation__user_id=u[0].id)
+            p= PartyBranch.objects.filter(partyuserrelation__user_id=u[0].id)
             #par_resp_num= PartyUserRelation.objects.filter(userid).count()
             response = {}
-            if u.exists():
+            if u.exists()&r.exists()&p.exists():
                 response['message']='查询成功'
                 response['flag'] = 'true'
                 response['code'] = 20000
@@ -152,11 +153,11 @@ def ResponsibilityDoApi(request):#缺少数据的时候
                         'role_resp_num':r[0].resprolerelation_set.count(),
                         'role_obs_num':r[0].obserrolerelation_set.count(),
                         'party_branch':u[0].partyuserrelation_set.first().party_branch.party_branch,
-                        'par_resp_num':p[0].partyuserrelation_set.count(),#没有Part_resp_relation表，无法明确确定党组织责任？？？？？
+                        'par_resp_num':p[0].partyuserrelation_set.count(),
                         'par_obs_num':p[0].obserpartyrelation_set.count(),
                         }
             else:
-                response['message'] = '查询失败'
+                response['message'] = '查询失败:数据不存在'
                 response['flag'] = 'flase'
                 response['code'] = 40000
                 data = {}
@@ -548,17 +549,24 @@ def ManagamentInquireDoApi(request):
             departmentid= request.POST.get('department_id')
             #taskstateid= request.POST.get('state_id')
             stateid = request.POST.get('state_id')
-            m_set = MeetingUserRelation.objects.filter(user_id=userid,
-                                                       meeting__state_id=stateid,
-                                                       user__department_id=departmentid).values('meeting_id',
-                                                                                                'meeting__theme',
-                                                                                                'user__department__name',
-                                                                                                'meeting__time',
-                                                                                                'meeting__place',
-                                                                                                'meeting__sponsor__user_name', #因为sponsor修改为user的外键，需要跨表查询名字
-                                                                                                'meeting__meeting_type__meeting_type',#添加了type表，需要查询跨表
-                                                                                                'meeting__state__state',
-                                                                                                ).distinct().order_by('id')
+            # m_set = MeetingUserRelation.objects.filter(#user_id=userid,#需要通过user确定department ？？？添加个if判断权限
+            #                                            meeting__state_id=stateid,
+            #                                            user__department_id=departmentid).values('meeting_id',
+            #                                                                                     'meeting__theme',
+            #                                                                                     'user__department__name',
+            #                                                                                     'meeting__time',
+            #                                                                                     'meeting__place',
+            #                                                                                     'meeting__sponsor__user_name', #因为sponsor修改为user的外键，需要跨表查询名字
+            #                                                                                     'meeting__meeting_type__meeting_type',#添加了type表，需要查询跨表
+            #                                                                                     'meeting__state__state',
+            #                                                                                     ).distinct().order_by('id')
+            m_set = Meeting.objects.filter(state_id=stateid,department_id=departmentid).values('id','theme',
+                                                                                               'department__name',
+                                                                                               'time',
+                                                                                               'place',
+                                                                                               'sponsor__name',
+                                                                                               'meeting_type',
+                                                                                               'state__state',).distinct().order_by('id')
             paginator = Paginator(m_set,current_page_size)
             total = paginator.count
             page_x = paginator.page(number=current_page_num).object_list# current_page_num

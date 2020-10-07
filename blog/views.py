@@ -437,7 +437,7 @@ def TaskAddDoApi(request):
         code = request.POST.get('code')
         task_title = request.POST.get('task_title')
         last_time = int(request.POST.get('last_time'))
-        pre_task_id = request.POST.get('pre_task_id')
+        # pre_task_id = request.POST.get('pre_task_id')
         appointor_id = request.POST.get('appointor_id')
         type = request.POST.get('type')
         is_secret = request.POST.get('is_secret')
@@ -456,13 +456,13 @@ def TaskAddDoApi(request):
             # 传什么？
             # 这个地方需要协商参与者和完成人，还有全部的add是否对外键做处理？？？？？？？？？？
             # 所属单位传id还是名称
-            _pre_task_id=Task.objects.get(id=pre_task_id)
+            # _pre_task_id=Task.objects.get(id=pre_task_id)
             _appointor_id=UserInfo.objects.get(id=appointor_id)
             user_id_list=user_id.split(",")
             TaskList=[]
 
 
-            u = Task(title=task_title, end_time=end_time, start_time=start_time, pid=_pre_task_id,
+            u = Task(title=task_title, end_time=end_time, start_time=start_time,
                      appointor=_appointor_id,
                      type=t, department_id=department, priority=p, content=content)
             u.save()
@@ -879,7 +879,7 @@ def TaskProgressApi(request):
         # progress = request.POST.get('progress')
         text = request.POST.get('text')
         is_baomi = request.POST.get('is_baomi')
-        imgSrc = request.FILES.getlist('annex')
+        imgSrc = request.FILES.getlist('img')
         path="http://152.136.99.242:3389/download/"
         #可以不写死吗
 
@@ -887,13 +887,14 @@ def TaskProgressApi(request):
         TaskAnnexList=[]
         if check_token(token):
             for item in imgSrc:
-                with open("./download/" + item.name, 'wb') as f:
-                    item=TaskAnnex(annex_url=(path + item.name))
-                    item.save()
-                    TaskAnnexList.append(item)
+                with open("./blog/download/" + item.name, 'wb') as f:
+
 
                     for c in item.chunks():
                         f.write(c)
+                        item = TaskAnnex(annex_url=(path + item.name))
+                        item.save()
+                        TaskAnnexList.append(item)
 
             s=TaskProgRecord(task_id=task_id,user_id=user_id,is_baomi=is_baomi,time=datetime.datetime.now())
             s.save()
@@ -927,7 +928,6 @@ def TaskProgressApi(request):
     else:
 
         return HttpResponse("请用post方式访问")
-
 
 
 def TaskTypeApi(request):
@@ -1029,7 +1029,7 @@ def TaskProgRecordApi(request):
     if request.method == "POST":
         token = request.POST.get('token')
         if check_token(token):
-            u_set = TaskProgRecord.objects.filter(is_baomi=1).values("id","task_id","user_id","progress_type__progress_type","annex_id","time")
+            u_set = TaskProgRecord.objects.filter(is_baomi=0).values("id","task_id","user_id","progress_type__progress_type","time")
             response = {
                 "code": "20000",
                 "flag": "true",
