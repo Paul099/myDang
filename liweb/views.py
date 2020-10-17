@@ -142,19 +142,24 @@ def ResponsibilityDoApi(request):#缺少数据的时候
             u= UserInfo.objects.filter(id=userid)
             #r= RoleInfo.objects.filter(id=u[0].roleuserrelation_set.first().role.id)
             r = RoleInfo.objects.filter(roleuserrelation__user_id=u[0].id)
+            r_r_set = RespRoleRelation.objects.filter(role_id=r.first().id)
+            r_o_set = ObserRoleRelation.objects.filter(role_id=r.first().id)
+
             p= PartyBranch.objects.filter(partyuserrelation__user_id=u[0].id)
-            #par_resp_num= PartyUserRelation.objects.filter(userid).count()
+            p_r_set = RespPartyRelation.objects.filter(party_id=p.first().id)
+            p_o_set = ObserPartyRelation.objects.filter(party_id=p.first().id)
+
             response = {}
             if u.exists()&r.exists()&p.exists():
                 response['message']='查询成功'
                 response['flag'] = 'true'
                 response['code'] = 20000
-                data = {'role': u[0].roleuserrelation_set.first().role.role,#一个user_id对应多个role时无法显示？？？？？？？
-                        'role_resp_num':r[0].resprolerelation_set.count(),
-                        'role_obs_num':r[0].obserrolerelation_set.count(),
-                        'party_branch':u[0].partyuserrelation_set.first().party_branch.party_branch,
-                        'par_resp_num':p[0].partyuserrelation_set.count(),
-                        'par_obs_num':p[0].obserpartyrelation_set.count(),
+                data = {'role': r.first().role,#一个user_id对应多个role时无法显示？？？？？？？
+                        'role_resp_num':r_r_set.count(),
+                        'role_obs_num':r_o_set.count(),
+                        'party_branch':p.first().party_brabch,
+                        'par_resp_num':p_r_set.count(),
+                        'par_obs_num':p_o_set.count(),
                         }
             else:
                 response['message'] = '查询失败:数据不存在'
@@ -560,7 +565,7 @@ def ManagamentInquireDoApi(request):
             #                                                                                     'meeting__meeting_type__meeting_type',#添加了type表，需要查询跨表
             #                                                                                     'meeting__state__state',
             #                                                                                     ).distinct().order_by('id')
-            m_set = Meeting.objects.filter(state_id=stateid,department_id=departmentid).values('id',
+            m_set = Meeting.objects.filter(state_id=stateid,department_id=departmentid,is_approve=1).values('id',
                                                                                                'theme',
                                                                                                'department__name',
                                                                                                'time',
@@ -704,22 +709,16 @@ def ManagamentAddDoApi(request):
             place = request.POST.get('place')
             sponsor = request.POST.get('sponsor')
             type = request.POST.get('type')
-            stateid =request.POST.get('state_id')#########
-            user = request.POST.get('user_id')#peoNames = request.POST.getlist('peoName', [])
-
+            #stateid =request.POST.get('state_id')创建会议的时候会议未完成
+            user = request.POST.get('user_id')
+            approver = request.POST.get('approver')
             #userid = request.POST.getlist('user_id[]')
             content = request.POST.get('content')######
 
             #d_idmax = Department.objects.aggregate(idmax=Max('id'))
             #d = Department.objects.create(id =d_idmax['idmax']+1,name=department)
-            # d = Department.objects.create( name=department)
             # d.save()
-            # m_t = MeetingType.objects.create(meeting_type=type)
-            # m_t.save()
-            # d = Department.objects.filter(name__exact=department)#__exact 精确等于
-            # m_t = MeetingType.objects.filter(meeting_type__exact=type).first()
-            # user_sponsor = UserInfo.objects.filter(name__exact=sponsor).first()
-            # d = Department.objects.get(id=departmentid)
+
             u = UserInfo.objects.get(id=sponsor)
             m = Meeting.objects.create( theme=theme,
                                         time=time,
@@ -729,6 +728,8 @@ def ManagamentAddDoApi(request):
                                         content=content,
                                         state_id=1,
                                         department_id=departmentid,
+                                        approve_user_id=approver,
+                                        is_approve=0
                                         )
             #u = UserInfo.objects.create(id = userid,department_id=d.id)
             #u.save()
@@ -802,7 +803,7 @@ def ManagamentQueryDoApi(request):
             current_page_size = request.POST.get('pagesize')
             userid = request.POST.get('user_id')
 
-            m = Meeting.objects.filter(meetinguserrelation__user_id=userid).values('meetinguserrelation__meeting_id','theme').distinct()
+            m = Meeting.objects.filter(meetinguserrelation__user_id=userid,is_approve=1).values('meetinguserrelation__meeting_id','theme').distinct()
             paginator = Paginator(m,current_page_size)
             total = paginator.count
             page_x = paginator.page(number=current_page_num).object_list# current_page_num
@@ -959,7 +960,7 @@ def ManagamentAnswerDoApi(request):
             #m_u = MeetingUserRelation.objects.filter(user_id=userid,meeting_id=meetingid,answer_id=None,)#reason=None)
             #m_u.update()更新应该在判断之后
             # m = Meeting.objects.filter(meetinguserrelation__user_id=userid[0].id,place=place,id=meetingid,time__gte=time)
-            m_u = MeetingUserRelation.objects.filter(user_id=userid,meeting_id=meetingid,)#bug：local时间需要在会议时间之前，加个Q查询
+            m_u = MeetingUserRelation.objects.filter(user_id=userid,meeting_id=meetingid,meeting__is_approve=1)#bug：local时间需要在会议时间之前，加个Q查询
 
             response = {}
             if m_u.exists() :
@@ -1068,7 +1069,7 @@ def ManagamentInvitedDoApi(request):#ManagamentInvitedDoApi
             current_page_size = request.POST.get('pagesize')
             userid = request.POST.get('user_id')
 
-            m = Meeting.objects.filter(meetinguserrelation__user_id=userid).values('id',
+            m = Meeting.objects.filter(meetinguserrelation__user_id=userid,is_approve=1).values('id',
                                                                                    'theme',
                                                                                    'department__name',
                                                                                    'time',
@@ -1107,10 +1108,128 @@ def ManagamentInvitedDoApi(request):#ManagamentInvitedDoApi
     else:
         return HttpResponse("请用post方式访问")
 
+#5--12待审批会议列表查询接口
+def ManagamentIsApprovedDoApi(request):
+    # {
+    #     "code":"20000"
+    #              "flag":"true"
+    #                    "message":"查询成功"
+    #                           "data":{
+    #               "meeting_id ": "1",
+    #               "theme": "XXXXX",
+    #               "department": "信息",
+    #               "time": "2020-5-31",
+    #               "place": "信息学院A307",
+    #               "sponsor": "李四",
+    #               "type": "XXXX",
+    #               "state": "未完成"
+    # }
+    if request.method == "POST":
+        token = request.POST.get('token')
+        code = request.POST.get('code')
+        if check_token(token):
+            current_page_num = request.POST.get('page')
+            current_page_size = request.POST.get('pagesize')
+            userid = request.POST.get('user_id')
+            departmentid= request.POST.get('department_id')
+            #taskstateid= request.POST.get('state_id')
+            stateid = request.POST.get('state_id')
+            # m_set = MeetingUserRelation.objects.filter(#user_id=userid,#需要通过user确定department ？？？添加个if判断权限
+            #                                            meeting__state_id=stateid,
+            #                                            user__department_id=departmentid).values('meeting_id',
+            #                                                                                     'meeting__theme',
+            #                                                                                     'user__department__name',
+            #                                                                                     'meeting__time',
+            #                                                                                     'meeting__place',
+            #                                                                                     'meeting__sponsor__user_name', #因为sponsor修改为user的外键，需要跨表查询名字
+            #                                                                                     'meeting__meeting_type__meeting_type',#添加了type表，需要查询跨表
+            #                                                                                     'meeting__state__state',
+            #                                                                                     ).distinct().order_by('id')
+            m_set = Meeting.objects.filter(state_id=stateid,department_id=departmentid,is_approve=1).values('id',
+                                                                                               'theme',
+                                                                                               'department__name',
+                                                                                               'time',
+                                                                                               'place',
+                                                                                               'sponsor__name',
+                                                                                               'meeting_type',
+                                                                                               'state__state',).distinct().order_by('id')
+            paginator = Paginator(m_set,current_page_size)
+            total = paginator.count
+            page_x = paginator.page(number=current_page_num).object_list# current_page_num
 
+            if m_set.exists():
+              response = {
+                    "code": "20000",
+                    "flag": "true",
+                    "message": "查询成功",
+                    "total": total,
+                    "data": list(page_x)#(page_x.object_list)
+                }
+            else:
+                response = {
+                    "code": "20000",
+                    "flag": "true",
+                    "message": "查询无记录",
+                    "data": []
+                }
 
+            return HttpResponse(json.dumps(response,cls=CJsonEncoder), content_type="application/json")
 
+        else:
+            return HttpResponse(json.dumps({"code":code,"message":"请登录"}), content_type="application/json")
 
+    else:
+
+        return HttpResponse("请用post方式访问")
+
+#5--13 待审批会议列表查询接口
+def ManagamentApproveDoApi(request):
+    # {
+    #     "meeting_type_id": "1",
+    #     "meeting_type": "党建学习"
+    # }
+    # {
+    #     " meeting_type_id ": "2",
+    #     " meeting_type ": "任务总结"
+    # }
+    # ……
+    if request.method == "POST":
+        token = request.POST.get('token')
+        code = request.POST.get('code')
+        if check_token(token):
+            current_page_num = request.POST.get('page')
+            current_page_size = request.POST.get('pagesize')
+            userid= request.POST.get('user_id')
+
+            m_t = MeetingType.objects.values('meeting_type_id','meeting_type')
+
+            paginator = Paginator(m_t,current_page_size)
+            total = paginator.count
+            page_x = paginator.page(number=current_page_num).object_list# current_page_num
+
+            if m_t.exists():
+              response = {
+                    "code": "20000",
+                    "flag": "true",
+                    "message": "查询成功",
+                    "total": total,
+                    "data": list(page_x)#(page_x.object_list)
+                }
+            else:
+                response = {
+                    "code": "20000",
+                    "flag": "true",
+                    "message": "查询失败",
+                    "data": {}
+                }
+
+            return HttpResponse(json.dumps(response,cls=CJsonEncoder), content_type="application/json")
+
+        else:
+            return HttpResponse(json.dumps({"code":code,"message":"请登录"}), content_type="application/json")
+
+    else:
+        return HttpResponse("请用post方式访问")
 
 
 

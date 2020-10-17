@@ -140,10 +140,13 @@ class Meeting(models.Model):
     state = models.ForeignKey('MeetingState', models.DO_NOTHING, blank=True, null=True)
     content = models.CharField(max_length=255, blank=True, null=True)
     department = models.ForeignKey(Department, models.DO_NOTHING, blank=True, null=True)
+    is_approve = models.IntegerField(blank=True, null=True)
+    approve_user_id = models.IntegerField(blank=True, null=True)
 
     class Meta:
         managed = False
         db_table = 'meeting'
+
 
 
 class MeetingAnswer(models.Model):
@@ -400,7 +403,7 @@ class UserInfo(models.Model):
     department = models.ForeignKey(Department, models.DO_NOTHING, blank=True, null=True)
     user_name = models.CharField(max_length=255, blank=True, null=True)
     password = models.CharField(max_length=255, blank=True, null=True)
-    job_id = models.IntegerField(blank=True, null=True)
+    job_id = models.CharField(max_length=11, blank=True, null=True)
     is_ratifier = models.IntegerField(blank=True, null=True)
     vx_code = models.CharField(max_length=255, blank=True, null=True)
     name = models.CharField(max_length=255, blank=True, null=True)
