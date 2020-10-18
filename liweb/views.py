@@ -140,7 +140,9 @@ def ResponsibilityDoApi(request):#缺少数据的时候
         if check_token(token):
             #current_page_num = request.POST.get('page')
             u= UserInfo.objects.filter(id=userid)
-            #r= RoleInfo.objects.filter(id=u[0].roleuserrelation_set.first().role.id)
+
+            # for x in range(u.count()):
+
             r = RoleInfo.objects.filter(roleuserrelation__user_id=u[0].id)
             r_r_set = RespRoleRelation.objects.filter(role_id=r.first().id)
             r_o_set = ObserRoleRelation.objects.filter(role_id=r.first().id)
@@ -157,7 +159,7 @@ def ResponsibilityDoApi(request):#缺少数据的时候
                 data = {'role': r.first().role,#一个user_id对应多个role时无法显示？？？？？？？
                         'role_resp_num':r_r_set.count(),
                         'role_obs_num':r_o_set.count(),
-                        'party_branch':p.first().party_brabch,
+                        'party_branch':p.first().party_branch,
                         'par_resp_num':p_r_set.count(),
                         'par_obs_num':p_o_set.count(),
                         }
@@ -166,13 +168,6 @@ def ResponsibilityDoApi(request):#缺少数据的时候
                 response['flag'] = 'flase'
                 response['code'] = 40000
                 data = {}
-
-
-            # paginator = Paginator(data, 5)#预计实现分页#参数1返回的数据，参数2每页数据数
-            # page_x = paginator.page(1)
-            # response['total'] = paginator.count
-            # response['data'] = page_x.object_list#list(data)
-
 
             response['data'] =data
             return HttpResponse(json.dumps(response), content_type="application/json")
@@ -227,8 +222,8 @@ def ResponsibilityListPartyDoApi(request):
             for x  in range(partys_num):
                 p[x] = PartyBranch.objects.filter(id=partys[x].id).distinct()
                 data[x]= {'party_branch': p[x].first().party_branch,
-                           'resppartyrelation__resp__content':list(chain.from_iterable(list(p[x].values_list('resppartyrelation__resp__content')))),
-                           'obserpartyrelation__observation__observation_point':list(chain.from_iterable(list(p[x].values_list('obserpartyrelation__observation__observation_point'))))}
+                           'resppartyrelation__resp__content':list(chain.from_iterable(list(p[x].values_list('resppartyrelation__resp_id','resppartyrelation__resp__content','resppartyrelation__resp__pid_id')))),
+                           'obserpartyrelation__observation__observation_point':list(chain.from_iterable(list(p[x].values_list('obserpartyrelation__observation_id','obserpartyrelation__observation__observation_point','obserpartyrelation__observation__pid_id'))))}
 
             paginator =Paginator(data,current_page_size)
             total = paginator.count
@@ -248,7 +243,7 @@ def ResponsibilityListPartyDoApi(request):
                     'message':'查询失败',
                     'flag':'flase',
                     'code':40000,
-                    'data':{}
+                    'data':[]
                 }
 
             return HttpResponse(json.dumps(response), content_type="application/json")
@@ -294,8 +289,11 @@ def ResponsibilityListRoleDoApi(request):
             for x  in range(roles_num):
                 r[x] = RoleInfo.objects.filter(id=roles[x].id).distinct()
                 data[x]= {'role': r[x].first().role,
-                           'resprolerelation__resp__content':list(chain.from_iterable(list(r[x].values_list('resprolerelation__resp__content')))),
-                           'obserrolerelation__observation__observation_point':list(chain.from_iterable(list(r[x].values_list('obserrolerelation__observation__observation_point'))))}
+                           'resprolerelation__resp__content':list(chain.from_iterable(list(r[x].values_list('resprolerelation__resp_id','resprolerelation__resp__content','resprolerelation__resp__pid_id')))),
+                           'obserrolerelation__observation__observation_point':list(chain.from_iterable(list(r[x].values_list('obserrolerelation__observation_id','obserrolerelation__observation__observation_point','obserrolerelation__observation__pid_id'))))}
+                # data[x]= {'role': r[x].first().role,
+                #            'resprolerelation__resp__content':list(chain.from_iterable(list(r[x].values_list('resprolerelation__resp__content')))),
+                #            'obserrolerelation__observation__observation_point':list(chain.from_iterable(list(r[x].values_list('obserrolerelation__observation__observation_point'))))}
 
             paginator =Paginator(data,current_page_size)
             total = paginator.count
@@ -315,7 +313,7 @@ def ResponsibilityListRoleDoApi(request):
                     'message':'查询失败',
                     'flag':'flase',
                     'code':40000,
-                    'data':{}
+                    'data':[]
                 }
 
             return HttpResponse(json.dumps(response), content_type="application/json")
@@ -326,149 +324,149 @@ def ResponsibilityListRoleDoApi(request):
 
         return HttpResponse("请用post方式访问")
 
-#3--2.单位责任清单接口
-def ResponsibilityListPartyDoApi(request):
-    # [
-    #     {
-    #         "party_branch": "信息学院党支部",
-    #         "par_resp ": "XXXXXX",
-    #         "par_obs ": "XXXXXXXXXXX",
-    #     }
-    #     {
-    #         "party_branch": "电子系党支部",
-    #         "par_resp ": "XXXXXX",
-    #         "par_obs ": "XXXXXXXXXXX",
-    #     }
-    # ……
-    # ]
-
-    if request.method == "POST":
-        token = request.POST.get('token')
-        code = request.POST.get('code')
-        if check_token(token):
-            current_page_num = request.POST.get('page')
-            current_page_size = request.POST.get('pagesize')
-            userid = request.POST.get('user_id')
-
-
-            pid = PartyBranch.objects.filter(Q(partyuserrelation__user_id=userid)&~Q(party_branch__startswith='校')).first().pid_id#通过 Q（__startswith='校'）筛选出不是校党委的支部的pid
-            #pid= PartyBranch.objects.filter(partyuserrelation__user_id=userid).first().pid_id#)&~Q(party_branch__startswith='校')
-            # p = PartyBranch.objects.filter(Q(partyuserrelation__user_id=userid)|Q(id= pid)).values('party_branch',
-            #                                                                                        'resppartyrelation__resp__content',
-            #                                                                                        'obserpartyrelation__observation__observation_point').distinct()
-            partys = PartyBranch.objects.filter(Q(partyuserrelation__user_id=userid)|Q(id= pid)).distinct()
-            partys_num = partys.count()
-            p = []
-            data = []
-            for i in range(partys_num):  #空列表直接赋值失败，需要append
-                p.append(i)
-                data.append(i)
-            for x  in range(partys_num):
-                p[x] = PartyBranch.objects.filter(id=partys[x].id).distinct()
-                data[x]= {'party_branch': p[x].first().party_branch,
-                           'resppartyrelation__resp__content':list(chain.from_iterable(list(p[x].values_list('resppartyrelation__resp__content')))),
-                           'obserpartyrelation__observation__observation_point':list(chain.from_iterable(list(p[x].values_list('obserpartyrelation__observation__observation_point'))))}
-
-            paginator =Paginator(data,current_page_size)
-            total = paginator.count
-            page_x = paginator.page(number=current_page_num).object_list
-
-            response = {}
-            if partys.exists():
-                response={
-                    'message':'查询成功',
-                    'flag':'true',
-                    'code':20000,
-                    'total':total,
-                    'data':list(page_x)
-                }
-            else:
-                response={
-                    'message':'查询失败',
-                    'flag':'flase',
-                    'code':40000,
-                    'data':{}
-                }
-
-            return HttpResponse(json.dumps(response), content_type="application/json")
-
-        else:
-            return HttpResponse(json.dumps({"code":code,"message": "请登录"}), content_type="application/json")
-
-    else:
-        return HttpResponse("请用post方式访问")
-
-
-#3--3.我的责任清单接口
-def ResponsibilityListRoleDoApi(request):
-    # {
-    #     "code":"20000"
-    #              "flag":"true"
-    #                    "message":"查询成功"
-    #                           "data":{
-
-    #     "party_branch": "信息学院党支部",
-    #     "par_resp ": "XXXXXX",
-    #     "par_obs ": "XXXXXXXXXXX"
-    #
-    # }
-    if request.method == "POST":
-        token = request.POST.get('token')
-        code = request.POST.get('code')
-        if check_token(token):
-            current_page_num = request.POST.get('page')
-            current_page_size = request.POST.get('pagesize')
-            userid = request.POST.get('user_id')
-
-            # r = RoleInfo.objects.filter(roleuserrelation__user_id=userid).values('role',
-            #                                                                      'resprolerelation__resp__content',
-            #                                                                      'obserrolerelation__observation__observation_point').distinct()
-            roles = RoleInfo.objects.filter(roleuserrelation__user_id=userid).distinct()
-            roles_num = roles.count()
-            r = []
-            data = []
-            for i in range(roles_num):  #空列表直接赋值失败，需要append
-                r.append(i)
-                data.append(i)
-            for x  in range(roles_num):
-                r[x] = RoleInfo.objects.filter(id=roles[x].id).distinct()
-                data[x]= {'role': r[x].first().role,
-                           'resprolerelation__resp__content':list(chain.from_iterable(list(r[x].values_list('resprolerelation__resp__content')))),
-                           'obserrolerelation__observation__observation_point':list(chain.from_iterable(list(r[x].values_list('obserrolerelation__observation__observation_point'))))}
-
-
-
-
-
-
-            paginator =Paginator(data,current_page_size)
-            total = paginator.count
-            page_x = paginator.page(number=current_page_num).object_list
-            response = {}
-            if roles.exists():
-                response={
-                    'message':'查询成功',
-                    'flag':'true',
-                    'code':20000,
-                    'total':total,
-                    'data':list(page_x)#data
-                }
-
-            else:
-                response={
-                    'message':'查询失败',
-                    'flag':'flase',
-                    'code':40000,
-                    'data':{}
-                }
-
-            return HttpResponse(json.dumps(response), content_type="application/json")
-        else:
-            return HttpResponse(json.dumps({"code":code,"message":"请登录"}), content_type="application/json")
-
-    else:
-
-        return HttpResponse("请用post方式访问")
+# #3--2.单位责任清单接口
+# def ResponsibilityListPartyDoApi(request):
+#     # [
+#     #     {
+#     #         "party_branch": "信息学院党支部",
+#     #         "par_resp ": "XXXXXX",
+#     #         "par_obs ": "XXXXXXXXXXX",
+#     #     }
+#     #     {
+#     #         "party_branch": "电子系党支部",
+#     #         "par_resp ": "XXXXXX",
+#     #         "par_obs ": "XXXXXXXXXXX",
+#     #     }
+#     # ……
+#     # ]
+#
+#     if request.method == "POST":
+#         token = request.POST.get('token')
+#         code = request.POST.get('code')
+#         if check_token(token):
+#             current_page_num = request.POST.get('page')
+#             current_page_size = request.POST.get('pagesize')
+#             userid = request.POST.get('user_id')
+#
+#
+#             pid = PartyBranch.objects.filter(Q(partyuserrelation__user_id=userid)&~Q(party_branch__startswith='校')).first().pid_id#通过 Q（__startswith='校'）筛选出不是校党委的支部的pid
+#             #pid= PartyBranch.objects.filter(partyuserrelation__user_id=userid).first().pid_id#)&~Q(party_branch__startswith='校')
+#             # p = PartyBranch.objects.filter(Q(partyuserrelation__user_id=userid)|Q(id= pid)).values('party_branch',
+#             #                                                                                        'resppartyrelation__resp__content',
+#             #                                                                                        'obserpartyrelation__observation__observation_point').distinct()
+#             partys = PartyBranch.objects.filter(Q(partyuserrelation__user_id=userid)|Q(id= pid)).distinct()
+#             partys_num = partys.count()
+#             p = []
+#             data = []
+#             for i in range(partys_num):  #空列表直接赋值失败，需要append
+#                 p.append(i)
+#                 data.append(i)
+#             for x  in range(partys_num):
+#                 p[x] = PartyBranch.objects.filter(id=partys[x].id).distinct()
+#                 data[x]= {'party_branch': p[x].first().party_branch,
+#                            'resppartyrelation__resp__content':list(chain.from_iterable(list(p[x].values_list('resppartyrelation__resp__content')))),
+#                            'obserpartyrelation__observation__observation_point':list(chain.from_iterable(list(p[x].values_list('obserpartyrelation__observation__observation_point'))))}
+#
+#             paginator =Paginator(data,current_page_size)
+#             total = paginator.count
+#             page_x = paginator.page(number=current_page_num).object_list
+#
+#             response = {}
+#             if partys.exists():
+#                 response={
+#                     'message':'查询成功',
+#                     'flag':'true',
+#                     'code':20000,
+#                     'total':total,
+#                     'data':list(page_x)
+#                 }
+#             else:
+#                 response={
+#                     'message':'查询失败',
+#                     'flag':'flase',
+#                     'code':40000,
+#                     'data':{}
+#                 }
+#
+#             return HttpResponse(json.dumps(response), content_type="application/json")
+#
+#         else:
+#             return HttpResponse(json.dumps({"code":code,"message": "请登录"}), content_type="application/json")
+#
+#     else:
+#         return HttpResponse("请用post方式访问")
+#
+#
+# #3--3.我的责任清单接口
+# def ResponsibilityListRoleDoApi(request):
+#     # {
+#     #     "code":"20000"
+#     #              "flag":"true"
+#     #                    "message":"查询成功"
+#     #                           "data":{
+#
+#     #     "party_branch": "信息学院党支部",
+#     #     "par_resp ": "XXXXXX",
+#     #     "par_obs ": "XXXXXXXXXXX"
+#     #
+#     # }
+#     if request.method == "POST":
+#         token = request.POST.get('token')
+#         code = request.POST.get('code')
+#         if check_token(token):
+#             current_page_num = request.POST.get('page')
+#             current_page_size = request.POST.get('pagesize')
+#             userid = request.POST.get('user_id')
+#
+#             # r = RoleInfo.objects.filter(roleuserrelation__user_id=userid).values('role',
+#             #                                                                      'resprolerelation__resp__content',
+#             #                                                                      'obserrolerelation__observation__observation_point').distinct()
+#             roles = RoleInfo.objects.filter(roleuserrelation__user_id=userid).distinct()
+#             roles_num = roles.count()
+#             r = []
+#             data = []
+#             for i in range(roles_num):  #空列表直接赋值失败，需要append
+#                 r.append(i)
+#                 data.append(i)
+#             for x  in range(roles_num):
+#                 r[x] = RoleInfo.objects.filter(id=roles[x].id).distinct()
+#                 data[x]= {'role': r[x].first().role,
+#                            'resprolerelation__resp__content':list(chain.from_iterable(list(r[x].values_list('resprolerelation__resp__content')))),
+#                            'obserrolerelation__observation__observation_point':list(chain.from_iterable(list(r[x].values_list('obserrolerelation__observation__observation_point'))))}
+#
+#
+#
+#
+#
+#
+#             paginator =Paginator(data,current_page_size)
+#             total = paginator.count
+#             page_x = paginator.page(number=current_page_num).object_list
+#             response = {}
+#             if roles.exists():
+#                 response={
+#                     'message':'查询成功',
+#                     'flag':'true',
+#                     'code':20000,
+#                     'total':total,
+#                     'data':list(page_x)#data
+#                 }
+#
+#             else:
+#                 response={
+#                     'message':'查询失败',
+#                     'flag':'flase',
+#                     'code':40000,
+#                     'data':{}
+#                 }
+#
+#             return HttpResponse(json.dumps(response), content_type="application/json")
+#         else:
+#             return HttpResponse(json.dumps({"code":code,"message":"请登录"}), content_type="application/json")
+#
+#     else:
+#
+#         return HttpResponse("请用post方式访问")
 
 
 
@@ -627,7 +625,7 @@ def ManagamentSpecificDoApi(request):
             #current_page_num = request.POST.get('page')
             meetingid = request.POST.get('meeting_id')
 
-            m = Meeting.objects.filter(id=meetingid)
+            m = Meeting.objects.filter(id=meetingid,is_approve=1)
             u =UserInfo.objects.filter(meetinguserrelation__meeting_id=meetingid)
             mu =MeetingUserRelation.objects.filter(meeting_id=meetingid)
 
@@ -652,7 +650,7 @@ def ManagamentSpecificDoApi(request):
                         'content':m[0].content,
                         }
             else:
-                response['message'] = '查询失败'
+                response['message'] = '查询失败:会议不存在'
                 response['flag'] = 'flase'
                 response['code'] = 40000
                 data = {}
@@ -709,7 +707,6 @@ def ManagamentAddDoApi(request):
                                         state_id=1,
                                         department_id=departmentid,
                                         approve_user_id=approver,
-                                        is_approve=0
                                         )
             #u = UserInfo.objects.create(id = userid,department_id=d.id)
             #u.save()
@@ -789,7 +786,7 @@ def ManagamentQueryDoApi(request):
             page_x = paginator.page(number=current_page_num).object_list# current_page_num
 
             if m.exists():
-              response = {
+                response = {
                     "code": "20000",
                     "flag": "true",
                     "message": "查询成功",
@@ -800,7 +797,7 @@ def ManagamentQueryDoApi(request):
                 response = {
                     "code": "20000",
                     "flag": "true",
-                    "message": "查询成功",
+                    "message": "查询失败",
                     "data": {}
                 }
 
@@ -887,7 +884,7 @@ def ManagamentShowinDoApi(request):
             time = timezone.localtime()  #请求参数里面包含time  格式不对
 
             userid = UserInfo.objects.filter(vx_code=vxcode)
-            m = Meeting.objects.filter(meetinguserrelation__user_id=userid[0].id,place=place,id=meetingid,time__gte=time)
+            m = Meeting.objects.filter(meetinguserrelation__user_id=userid[0].id,place=place,id=meetingid,time__gte=time,is_approve=1)
 
             response = {}
             if m.exists() :
@@ -1077,8 +1074,8 @@ def ManagamentInvitedDoApi(request):#ManagamentInvitedDoApi
                 response = {
                     "code": "20000",
                     "flag": "true",
-                    "message": "查询成功",
-                    "data": {}
+                    "message": "查询无记录",
+                    "data": []
                 }
 
             return HttpResponse(json.dumps(response,cls=CJsonEncoder), content_type="application/json")
@@ -1116,7 +1113,7 @@ def ManagamentIsApprovedDoApi(request):
             userid = request.POST.get('user_id')
 
 
-            m_set = Meeting.objects.filter(approve_user_id=userid,is_approve=None).values('id',#可能要加权限问题？？？
+            m_set = Meeting.objects.filter(approve_user_id=userid,is_approve=None).values('id',#可能要加权限问题
                                                                                            'theme',
                                                                                            'department__name',
                                                                                            'time',
@@ -1175,8 +1172,6 @@ def ManagamentApproveDoApi(request):
             isagree = request.POST.get('is_agree')#0为不同意，1为同意。判断后修改is_approve字段
 
             m = Meeting.objects.filter(approve_user_id=userid,id=meetingid,)#is_approve=None应该不需要再次判断
-
-
 
             if m.exists():
                 m.update(is_approve=isagree)
