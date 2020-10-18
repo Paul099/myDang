@@ -494,7 +494,7 @@ def ManagamentDoApi(request):
             #current_page_num = request.POST.get('page')
             userid = request.POST.get('user_id')
             u = UserInfo.objects.filter(id=userid)
-            m = MeetingUserRelation.objects.filter(user_id=userid,answer_id=None)
+            m = MeetingUserRelation.objects.filter(user_id=userid,answer_id=None,meeting__is_approve=1)
             response = {}
             if u.exists():
 
@@ -554,25 +554,15 @@ def ManagamentInquireDoApi(request):
             departmentid= request.POST.get('department_id')
             #taskstateid= request.POST.get('state_id')
             stateid = request.POST.get('state_id')
-            # m_set = MeetingUserRelation.objects.filter(#user_id=userid,#需要通过user确定department ？？？添加个if判断权限
-            #                                            meeting__state_id=stateid,
-            #                                            user__department_id=departmentid).values('meeting_id',
-            #                                                                                     'meeting__theme',
-            #                                                                                     'user__department__name',
-            #                                                                                     'meeting__time',
-            #                                                                                     'meeting__place',
-            #                                                                                     'meeting__sponsor__user_name', #因为sponsor修改为user的外键，需要跨表查询名字
-            #                                                                                     'meeting__meeting_type__meeting_type',#添加了type表，需要查询跨表
-            #                                                                                     'meeting__state__state',
-            #                                                                                     ).distinct().order_by('id')
+
             m_set = Meeting.objects.filter(state_id=stateid,department_id=departmentid,is_approve=1).values('id',
-                                                                                               'theme',
-                                                                                               'department__name',
-                                                                                               'time',
-                                                                                               'place',
-                                                                                               'sponsor__name',
-                                                                                               'meeting_type',
-                                                                                               'state__state',).distinct().order_by('id')
+                                                                                                           'theme',
+                                                                                                           'department__name',
+                                                                                                           'time',
+                                                                                                           'place',
+                                                                                                           'sponsor__name',
+                                                                                                           'meeting_type',
+                                                                                                           'state__state',).distinct().order_by('id')
             paginator = Paginator(m_set,current_page_size)
             total = paginator.count
             page_x = paginator.page(number=current_page_num).object_list# current_page_num
@@ -638,19 +628,9 @@ def ManagamentSpecificDoApi(request):
             meetingid = request.POST.get('meeting_id')
 
             m = Meeting.objects.filter(id=meetingid)
-            #d =Department.objects.filter(id=m[0].department_id).first()
             u =UserInfo.objects.filter(meetinguserrelation__meeting_id=meetingid)
             mu =MeetingUserRelation.objects.filter(meeting_id=meetingid)
 
-           # # m = Meeting.objects.filter(id= meetingid).values('department_id',
-           #                                                   'theme',
-           #                                                   'department__department__name',
-           #                                                   'time',
-           #                                                   'place',
-           #                                                   'sponsor__user_name',
-           #                                                   'meeting_type__meeting_type',
-           #                                                   'state_id',
-           #                                                   'content')
             response = {}
             if m.exists():
 
@@ -967,9 +947,10 @@ def ManagamentAnswerDoApi(request):
                 if answerid==1 :
 
                     #m_u.update(answer_id=answerid,reason=reason)
-                    MeetingUserRelation.objects.get(id=m_u[0])
-                else:
+                    #MeetingUserRelation.objects.get(id=m_u[0])
                     m_u.update(answer_id=answerid)
+                else:
+                    m_u.update(answer_id=answerid,reason=reason)
 
                 response['message'] = '应答成功'
                 response['flag'] = 'true'
@@ -1108,6 +1089,8 @@ def ManagamentInvitedDoApi(request):#ManagamentInvitedDoApi
     else:
         return HttpResponse("请用post方式访问")
 
+
+
 #5--12待审批会议列表查询接口
 def ManagamentIsApprovedDoApi(request):
     # {
@@ -1131,31 +1114,19 @@ def ManagamentIsApprovedDoApi(request):
             current_page_num = request.POST.get('page')
             current_page_size = request.POST.get('pagesize')
             userid = request.POST.get('user_id')
-            departmentid= request.POST.get('department_id')
-            #taskstateid= request.POST.get('state_id')
-            stateid = request.POST.get('state_id')
-            # m_set = MeetingUserRelation.objects.filter(#user_id=userid,#需要通过user确定department ？？？添加个if判断权限
-            #                                            meeting__state_id=stateid,
-            #                                            user__department_id=departmentid).values('meeting_id',
-            #                                                                                     'meeting__theme',
-            #                                                                                     'user__department__name',
-            #                                                                                     'meeting__time',
-            #                                                                                     'meeting__place',
-            #                                                                                     'meeting__sponsor__user_name', #因为sponsor修改为user的外键，需要跨表查询名字
-            #                                                                                     'meeting__meeting_type__meeting_type',#添加了type表，需要查询跨表
-            #                                                                                     'meeting__state__state',
-            #                                                                                     ).distinct().order_by('id')
-            m_set = Meeting.objects.filter(state_id=stateid,department_id=departmentid,is_approve=1).values('id',
-                                                                                               'theme',
-                                                                                               'department__name',
-                                                                                               'time',
-                                                                                               'place',
-                                                                                               'sponsor__name',
-                                                                                               'meeting_type',
-                                                                                               'state__state',).distinct().order_by('id')
+
+
+            m_set = Meeting.objects.filter(approve_user_id=userid,is_approve=None).values('id',#可能要加权限问题？？？
+                                                                                           'theme',
+                                                                                           'department__name',
+                                                                                           'time',
+                                                                                           'place',
+                                                                                           'sponsor__name',
+                                                                                           'meeting_type',
+                                                                                           'state__state',).distinct().order_by('id')
             paginator = Paginator(m_set,current_page_size)
             total = paginator.count
-            page_x = paginator.page(number=current_page_num).object_list# current_page_num
+            page_x = paginator.page(number=current_page_num).object_list
 
             if m_set.exists():
               response = {
@@ -1182,7 +1153,8 @@ def ManagamentIsApprovedDoApi(request):
 
         return HttpResponse("请用post方式访问")
 
-#5--13 待审批会议列表查询接口
+
+#5--13 会议审批接口
 def ManagamentApproveDoApi(request):
     # {
     #     "meeting_type_id": "1",
@@ -1197,30 +1169,29 @@ def ManagamentApproveDoApi(request):
         token = request.POST.get('token')
         code = request.POST.get('code')
         if check_token(token):
-            current_page_num = request.POST.get('page')
-            current_page_size = request.POST.get('pagesize')
+
             userid= request.POST.get('user_id')
+            meetingid = request.POST.get('meeting_id')
+            isagree = request.POST.get('is_agree')#0为不同意，1为同意。判断后修改is_approve字段
 
-            m_t = MeetingType.objects.values('meeting_type_id','meeting_type')
+            m = Meeting.objects.filter(approve_user_id=userid,id=meetingid,)#is_approve=None应该不需要再次判断
 
-            paginator = Paginator(m_t,current_page_size)
-            total = paginator.count
-            page_x = paginator.page(number=current_page_num).object_list# current_page_num
 
-            if m_t.exists():
-              response = {
+
+            if m.exists():
+                m.update(is_approve=isagree)
+                response = {
                     "code": "20000",
                     "flag": "true",
-                    "message": "查询成功",
-                    "total": total,
-                    "data": list(page_x)#(page_x.object_list)
+                    "message": "审批完成",
+                    "data": {'is_succeed':1},
                 }
             else:
                 response = {
                     "code": "20000",
                     "flag": "true",
-                    "message": "查询失败",
-                    "data": {}
+                    "message": "会议不存在",
+                    "data": []
                 }
 
             return HttpResponse(json.dumps(response,cls=CJsonEncoder), content_type="application/json")
@@ -1275,7 +1246,7 @@ def UserInquireDoApi(request):
                     "code": "20000",
                     "flag": "true",
                     "message": "查询成功",
-                    "data": {}
+                    "data": []
                 }
 
 
