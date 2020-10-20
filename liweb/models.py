@@ -217,6 +217,17 @@ class ObservationList(models.Model):
         db_table = 'observation_list'
 
 
+class Overtime(models.Model):
+    id = models.IntegerField(primary_key=True)
+    day_num = models.IntegerField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'overtime'
+
+
+
+
 class PartyBranch(models.Model):
     party_branch = models.CharField(max_length=255, blank=True, null=True)
     pid = models.ForeignKey('self', models.DO_NOTHING, db_column='pid', blank=True, null=True)

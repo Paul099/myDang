@@ -152,17 +152,30 @@ def ResponsibilityDoApi(request):#缺少数据的时候
             p_o_set = ObserPartyRelation.objects.filter(party_id=p.first().id)
 
             response = {}
+            data = [0]*(r.count()+p.count())
             if u.exists()&r.exists()&p.exists():
-                response['message']='查询成功'
-                response['flag'] = 'true'
-                response['code'] = 20000
-                data = {'role': r.first().role,#一个user_id对应多个role时无法显示？？？？？？？
-                        'role_resp_num':r_r_set.count(),
-                        'role_obs_num':r_o_set.count(),
-                        'party_branch':p.first().party_branch,
-                        'par_resp_num':p_r_set.count(),
-                        'par_obs_num':p_o_set.count(),
-                        }
+
+                for x in range(r.count()):
+                    r_role = r[x].role
+                    data[x] = {'role':r_role,
+                               'role_resp_num':RespRoleRelation.objects.filter(role_id=r[x].id).count(),
+                               'role_obs_num':ObserRoleRelation.objects.filter(role_id=r[x].id).count(),}
+                # for i in range(r.count(),p.count()+r.count()):
+                #     p_party = p[i-p.count()].party_branch
+                #     data[i] = {'party_branch':p_party,
+                #                'par_resp_num':RespPartyRelation.objects.filter(party_id=p[i].id).count(),
+                #                'par_obs_num':ObserPartyRelation.objects.filter(party_id=p[i].id).count()}
+
+                # response['message']='查询成功'
+                # response['flag'] = 'true'
+                # response['code'] = 20000
+                # data = {'role': r.first().role,#一个user_id对应多个role时无法显示？？？？？？？
+                #         'role_resp_num':r_r_set.count(),
+                #         'role_obs_num':r_o_set.count(),
+                #         'party_branch':p.first().party_branch,
+                #         'par_resp_num':p_r_set.count(),
+                #         'par_obs_num':p_o_set.count(),
+                #         }
             else:
                 response['message'] = '查询失败:数据不存在'
                 response['flag'] = 'flase'
