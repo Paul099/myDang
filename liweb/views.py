@@ -407,6 +407,8 @@ def ManagamentInquireDoApi(request):
             departmentid= request.POST.get('department_id')
             #taskstateid= request.POST.get('state_id')
             stateid = request.POST.get('state_id')
+            meetingtypeid = request.POST.get('meeting_type_id')
+
 
             # current_page_size = 100
             # current_page_num = 1
@@ -423,14 +425,14 @@ def ManagamentInquireDoApi(request):
             #                                                                                                    'meeting_type',
             #                                                                                                    'state__state',).distinct().order_by('id')
             #     m_set.append(m)
-            m_set = Meeting.objects.filter(state_id=stateid,department_id=departmentid,is_approve=1).values('id',
-                                                                                                           'theme',
-                                                                                                           'department__name',
-                                                                                                           'time',
-                                                                                                           'place',
-                                                                                                           'sponsor__name',
-                                                                                                           'meeting_type',
-                                                                                                           'state__state',).distinct().order_by('id')
+            m_set = Meeting.objects.filter(state_id=stateid,meeting_type_id=meetingtypeid,department_id=departmentid,is_approve=1).values('id',
+                                                                                                                                           'theme',
+                                                                                                                                           'department__name',
+                                                                                                                                           'time',
+                                                                                                                                           'place',
+                                                                                                                                           'sponsor__name',
+                                                                                                                                           'meeting_type',
+                                                                                                                                           'state__state',).distinct().order_by('id')
 
             paginator = Paginator(m_set,current_page_size)
             total = paginator.count
@@ -604,8 +606,6 @@ def ManagamentAddDoApi(request):
                 response['flag'] = 'true'
                 response['code'] = 20000
                 data = {'is_succeed':1,
-                        # 'mu_start':mu_start,
-                        # 'mu_end':mu_end
                         }
             else:
                 response['message'] = '添加失败'
@@ -917,8 +917,9 @@ def ManagamentInvitedDoApi(request):#ManagamentInvitedDoApi
             current_page_num = request.POST.get('page')
             current_page_size = request.POST.get('pagesize')
             userid = request.POST.get('user_id')
+            meetingtypeid = request.POST.get('meeting_type_id')
 
-            m = Meeting.objects.filter(meetinguserrelation__user_id=userid,is_approve=1).values('id',
+            m = Meeting.objects.filter(meeting_type_id=meetingtypeid,meetinguserrelation__user_id=userid,is_approve=1).values('id',
                                                                                    'theme',
                                                                                    'department__name',
                                                                                    'time',
@@ -982,16 +983,17 @@ def ManagamentIsApprovedDoApi(request):
             current_page_num = request.POST.get('page')
             current_page_size = request.POST.get('pagesize')
             userid = request.POST.get('user_id')
+            meetingtypeid = request.POST.get('meeting_type_id')
 
 
-            m_set = Meeting.objects.filter(approve_user_id=userid,is_approve=None).values('id',#可能要加权限问题
-                                                                                           'theme',
-                                                                                           'department__name',
-                                                                                           'time',
-                                                                                           'place',
-                                                                                           'sponsor__name',
-                                                                                           'meeting_type',
-                                                                                           'state__state',).distinct().order_by('id')
+            m_set = Meeting.objects.filter(approve_user_id=userid,meeting_type_id=meetingtypeid,is_approve=None).values('id',#可能要加权限问题
+                                                                                                                       'theme',
+                                                                                                                       'department__name',
+                                                                                                                       'time',
+                                                                                                                       'place',
+                                                                                                                       'sponsor__name',
+                                                                                                                       'meeting_type',
+                                                                                                                       'state__state',).distinct().order_by('id')
             paginator = Paginator(m_set,current_page_size)
             total = paginator.count
             page_x = paginator.page(number=current_page_num).object_list
