@@ -371,6 +371,7 @@ class TaskProgRecord(models.Model):
     text = models.CharField(max_length=255, blank=True, null=True)
     time = models.DateTimeField(blank=True, null=True)
     is_baomi = models.IntegerField(blank=True, null=True)
+    zn_title = models.CharField(max_length=255, blank=True, null=True)
 
     class Meta:
         managed = False
