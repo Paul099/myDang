@@ -404,7 +404,7 @@ def ManagamentInquireDoApi(request):
             current_page_num = request.POST.get('page')
             current_page_size = request.POST.get('pagesize')
             userid = request.POST.get('user_id')
-            departmentid= request.POST.get('department_id')
+            department= request.POST.get('department_id')
             #taskstateid= request.POST.get('state_id')
             stateid = request.POST.get('state_id')
             meetingtypeid = request.POST.get('meeting_type_id')
@@ -413,26 +413,27 @@ def ManagamentInquireDoApi(request):
             # current_page_size = 100
             # current_page_num = 1
             # department = "12,4"
-            # m_set = []
-            # departmentid = department.split(",")
-            # for x in range(len(departmentid)):
-            #     m = Meeting.objects.filter(state_id=stateid,department_id=departmentid[x],is_approve=1).values('id',
-            #                                                                                                    'theme',
-            #                                                                                                    'department__name',
-            #                                                                                                    'time',
-            #                                                                                                    'place',
-            #                                                                                                    'sponsor__name',
-            #                                                                                                    'meeting_type',
-            #                                                                                                    'state__state',).distinct().order_by('id')
-            #     m_set.append(m)
-            m_set = Meeting.objects.filter(state_id=stateid,meeting_type_id=meetingtypeid,department_id=departmentid,is_approve=1).values('id',
-                                                                                                                                           'theme',
-                                                                                                                                           'department__name',
-                                                                                                                                           'time',
-                                                                                                                                           'place',
-                                                                                                                                           'sponsor__name',
-                                                                                                                                           'meeting_type',
-                                                                                                                                           'state__state',).distinct().order_by('id')
+            m_set_x = []
+            departmentid = department.split(",")
+            for x in range(len(departmentid)):
+                m = Meeting.objects.filter(state_id=stateid,
+                                           department_id=departmentid[x],
+                                           meeting_type_id=meetingtypeid,
+                                           is_approve=1).values('id',
+                                                               'theme',
+                                                               'department__name',
+                                                               'time',
+                                                               'place',
+                                                               'sponsor__name',
+                                                               'meeting_type',
+                                                               'state__state',).distinct().order_by('id')
+                m_set_x.append(m)
+            m_set = m_set_x[0]
+            for x in range(len(m_set_x)):
+                if x < len(m_set_x):
+                    m_set = m_set|m_set_x[x]#QuerySet合并
+                else:
+                    break
 
             paginator = Paginator(m_set,current_page_size)
             total = paginator.count
@@ -1113,7 +1114,7 @@ def UserInquireDoApi(request):
                 response = {
                     "code": "20000",
                     "flag": "true",
-                    "message": "查询成功",
+                    "message": "查询失败：数据不存在",
                     "data": []
                 }
 
@@ -1163,7 +1164,7 @@ def DepartmentInquireDoApi(request):
                 response = {
                     "code": "20000",
                     "flag": "true",
-                    "message": "查询成功",
+                    "message": "查询失败：数据不存在",
                     "data": {}
                 }
 
@@ -1177,3 +1178,73 @@ def DepartmentInquireDoApi(request):
 
 
 
+
+
+#7.3会议数据分析接口
+def MeetingAnalysisApi(request):
+
+
+    if request.method == "POST":
+        token = request.POST.get('token')
+        code = request.POST.get('code')
+        if check_token(token):
+            departmentid = request.POST.get('department_id')
+            meetingtypeid = request.POST.get('meeting_type_id')
+            period_begin = request.POST.get('period_begin')
+            period_end = request.POST.get('period_end')
+            begin = datetime.datetime.strptime(period_begin, "%Y-%m-%d")
+            end = datetime.datetime.strptime(period_end, "%Y-%m-%d")
+
+            if meetingtypeid:
+                m_obj = Meeting.objects.filter(start_time__range=(begin,end))
+                meeting_num = Meeting.objects.filter(is_approve=1,department_id=departmentid).count()
+                yjs_meeting_num = Meeting.objects.filter(state_id=2).count()
+                wks_meeting_num = Meeting.objects.filter(state_id=1).count()
+                meeting_rate = Meeting.objects.filter()
+            else:
+                meeting_num = Meeting.objects.filter(is_approve=1,department_id=departmentid,meeting_type_id=meetingtypeid).count()
+                yjs_meeting_num = Meeting.objects.filter(is_approve=1,state_id=2,meeting_type_id=meetingtypeid).count()
+                wks_meeting_num = Meeting.objects.filter(is_approve=1,state_id=1,meeting_type_id=meetingtypeid).count()
+                meeting_rate = Meeting.objects.filter()
+
+            # if task_type_id == '0':
+            #     T_obj = Task.objects.filter(start_time__range=(begin, end))
+            # else:
+            #     T_obj = Task.objects.filter(type=task_type_id, start_time__range=(begin, end))
+            #
+            # wwc_task_num = T_obj.filter(state_id__in=[1, 4]).count()
+            # ywc_task_num = T_obj.filter(state_id__in=[2, 3]).count()
+            # task_num = wwc_task_num + ywc_task_num
+            # d = {
+            #     "wwc_task_num": wwc_task_num,
+            #     "ywc_task_num": ywc_task_num,
+            #     "task_num": task_num,
+            #     "task_rate": ywc_task_num / task_num,
+            #     "department": 0
+            # }
+            # data.append(d)
+            # if .exists():
+            response = {
+                "code": "20000",
+                "flag": "true",
+                "message": "查询成功",
+                "data": {'meeting_num':meeting_num,
+                         'yjs_meeting_num':yjs_meeting_num,
+                         'wks_meeting_num':wks_meeting_num,
+                         'meeting_rate':meeting_rate}
+            }
+            # else:
+            #     response = {
+            #         "code": "20000",
+            #         "flag": "true",
+            #         "message": "查询失败：会议不存在",
+            #         "data": {}
+            #     }
+
+            return HttpResponse(json.dumps(response), content_type="application/json")
+
+        else:
+            return HttpResponse(json.dumps({"code": code, "message": "请登录"}), content_type="application/json")
+
+    else:
+        return HttpResponse("请用post方式访问")

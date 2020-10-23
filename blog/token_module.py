@@ -55,9 +55,9 @@ def get_username(token):
 
 
 def check_token(token):
-    # username = get_username(token)
-    # last_token = cache.get(username)
-    # if last_token:
-    #     return True
+    username = get_username(token)
+    last_token = cache.get(username)
+    if last_token:
+        return True
     return True
 

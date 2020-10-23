@@ -33,6 +33,11 @@ urlpatterns = [
 
     path('webname/taskprogrecord.do', views.TaskProgRecordApi),
 
+    path('webname/imguploadapi.do', views.ImgUploadApi),
+
+    path('webname/getuser', views.GetUser),
+    path('webname/taskanalysis', views.TaskAnalysisApi),
+
 
     url(r'^download/(?P<path>.*)$', serve, {'document_root':'/home/ubuntu/myDang/blog/download'})
 

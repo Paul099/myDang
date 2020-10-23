@@ -214,6 +214,15 @@ class ObservationList(models.Model):
         db_table = 'observation_list'
 
 
+class Overtime(models.Model):
+    id = models.IntegerField(primary_key=True)
+    day_num = models.IntegerField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'overtime'
+
+
 class PartyBranch(models.Model):
     party_branch = models.CharField(max_length=255, blank=True, null=True)
     pid = models.ForeignKey('self', models.DO_NOTHING, db_column='pid', blank=True, null=True)
@@ -312,7 +321,6 @@ class TaskAnnex(models.Model):
 
 
 class TaskAnnexRelation(models.Model):
-    id = models.IntegerField(primary_key=True)
     task = models.ForeignKey(Task, models.DO_NOTHING, blank=True, null=True)
     task_prog_record = models.ForeignKey('TaskProgRecord', models.DO_NOTHING, blank=True, null=True)
     annex = models.ForeignKey(TaskAnnex, models.DO_NOTHING, blank=True, null=True)
@@ -358,6 +366,7 @@ class TaskProgRecord(models.Model):
     text = models.CharField(max_length=255, blank=True, null=True)
     time = models.DateTimeField(blank=True, null=True)
     is_baomi = models.IntegerField(blank=True, null=True)
+    zn_title = models.CharField(max_length=255, blank=True, null=True)
 
     class Meta:
         managed = False
@@ -401,7 +410,7 @@ class UserInfo(models.Model):
     department = models.ForeignKey(Department, models.DO_NOTHING, blank=True, null=True)
     user_name = models.CharField(max_length=255, blank=True, null=True)
     password = models.CharField(max_length=255, blank=True, null=True)
-    job_id = models.IntegerField(blank=True, null=True)
+    job_id = models.CharField(max_length=11, blank=True, null=True)
     is_ratifier = models.IntegerField(blank=True, null=True)
     vx_code = models.CharField(max_length=255, blank=True, null=True)
     name = models.CharField(max_length=255, blank=True, null=True)
