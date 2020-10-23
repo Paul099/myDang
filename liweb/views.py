@@ -2,7 +2,7 @@ from decimal import *
 from django.http.response import HttpResponse, JsonResponse
 from liweb.models import *  #把liweb模块的models引入
 from datetime import datetime
-from django.db.models import Count,Max,Q
+from django.db.models import Count,Max,Q,Sum,Avg
 import  json,time,hashlib,string,random,datetime
 from django.core import signing
 from django.core.cache import cache
@@ -1180,7 +1180,7 @@ def DepartmentInquireDoApi(request):
 
 
 
-#7.3会议数据分析接口
+#6.3会议数据分析接口
 def MeetingAnalysisApi(request):
 
 
@@ -1195,52 +1195,62 @@ def MeetingAnalysisApi(request):
             begin = datetime.datetime.strptime(period_begin, "%Y-%m-%d")
             end = datetime.datetime.strptime(period_end, "%Y-%m-%d")
 
-            if meetingtypeid:
-                m_obj = Meeting.objects.filter(start_time__range=(begin,end))
-                meeting_num = Meeting.objects.filter(is_approve=1,department_id=departmentid).count()
-                yjs_meeting_num = Meeting.objects.filter(state_id=2).count()
-                wks_meeting_num = Meeting.objects.filter(state_id=1).count()
-                meeting_rate = Meeting.objects.filter()
-            else:
-                meeting_num = Meeting.objects.filter(is_approve=1,department_id=departmentid,meeting_type_id=meetingtypeid).count()
-                yjs_meeting_num = Meeting.objects.filter(is_approve=1,state_id=2,meeting_type_id=meetingtypeid).count()
-                wks_meeting_num = Meeting.objects.filter(is_approve=1,state_id=1,meeting_type_id=meetingtypeid).count()
-                meeting_rate = Meeting.objects.filter()
+            data = []
+            if departmentid==0:
+                if meetingtypeid==0:
+                    M_obj = Meeting.objects.filter(time__range=(begin,end),is_approve=1)
 
-            # if task_type_id == '0':
-            #     T_obj = Task.objects.filter(start_time__range=(begin, end))
-            # else:
-            #     T_obj = Task.objects.filter(type=task_type_id, start_time__range=(begin, end))
-            #
-            # wwc_task_num = T_obj.filter(state_id__in=[1, 4]).count()
-            # ywc_task_num = T_obj.filter(state_id__in=[2, 3]).count()
-            # task_num = wwc_task_num + ywc_task_num
-            # d = {
-            #     "wwc_task_num": wwc_task_num,
-            #     "ywc_task_num": ywc_task_num,
-            #     "task_num": task_num,
-            #     "task_rate": ywc_task_num / task_num,
-            #     "department": 0
-            # }
-            # data.append(d)
-            # if .exists():
+                else:
+                    M_obj = Meeting.objects.filter(time__range=(begin, end),is_approve=1,meeting_type_id=meetingtypeid)
+
+                yjs_meeting_num = M_obj.filter(state_id=2).count()#已结束的会议
+                wks_meeting_num = M_obj.filter(state_id=1).count()
+                meeting_num = yjs_meeting_num+wks_meeting_num
+            # rate = []
+            # m_rate = []
+            # m_ch = M_obj.filter(meetinguserrelation__answer_id=1).count()
+            # m_qi =M_obj.filter(meetinguserrelation__answer_id=2).count()
+            # meeting_rate = M_obj.filter(state_id=2)
+                m = {
+                    'meeting_num':meeting_num,
+                    'yjs_meeting_num':yjs_meeting_num,
+                    'wks_meeting_num':wks_meeting_num,
+                    'meeting_rate':yjs_meeting_num / meeting_num,
+                    'department':0
+                    }
+                data.append(m)
+            else:
+                department_id=departmentid.split(",")
+                for department in department_id:
+                    if meetingtypeid == 0:
+                        M_obj = Meeting.objects.filter(department_id=department,time__range=(begin, end), is_approve=1)
+
+                    else:
+                        M_obj = Meeting.objects.filter(department_id=department,time__range=(begin, end), is_approve=1,meeting_type_id=meetingtypeid)
+
+                    yjs_meeting_num = M_obj.filter(state_id=2).count()  # 已结束的会议
+                    wks_meeting_num = M_obj.filter(state_id=1).count()
+                    meeting_num = yjs_meeting_num + wks_meeting_num
+                    # rate = []
+                    # m_rate = []
+                    # m_ch = M_obj.filter(meetinguserrelation__answer_id=1).count()
+                    # m_qi =M_obj.filter(meetinguserrelation__answer_id=2).count()
+                    # meeting_rate = M_obj.filter(state_id=2)
+                    m = {
+                        'meeting_num': meeting_num,
+                        'yjs_meeting_num': yjs_meeting_num,
+                        'wks_meeting_num': wks_meeting_num,
+                        'meeting_rate': yjs_meeting_num / meeting_num,
+                        'department':department
+                    }
+                    data.append(m)
+
             response = {
                 "code": "20000",
                 "flag": "true",
                 "message": "查询成功",
-                "data": {'meeting_num':meeting_num,
-                         'yjs_meeting_num':yjs_meeting_num,
-                         'wks_meeting_num':wks_meeting_num,
-                         'meeting_rate':meeting_rate}
+                "data": data
             }
-            # else:
-            #     response = {
-            #         "code": "20000",
-            #         "flag": "true",
-            #         "message": "查询失败：会议不存在",
-            #         "data": {}
-            #     }
-
             return HttpResponse(json.dumps(response), content_type="application/json")
 
         else:
