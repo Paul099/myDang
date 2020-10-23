@@ -7,13 +7,5 @@
       <jdbc-driver>com.mysql.cj.jdbc.Driver</jdbc-driver>
       <jdbc-url>jdbc:mysql://rm-2ze0mbg8o9ea363302o.mysql.rds.aliyuncs.com:3306</jdbc-url>
     </data-source>
-    <data-source source="LOCAL" name="Django default" uuid="d866d71f-f6ff-45f4-b036-adea21f4fcee">
-      <driver-ref>mysql.8</driver-ref>
-      <synchronize>true</synchronize>
-      <imported>true</imported>
-      <remarks>$PROJECT_DIR$/myDang/settings.py</remarks>
-      <jdbc-driver>com.mysql.cj.jdbc.Driver</jdbc-driver>
-      <jdbc-url>jdbc:mysql://rm-2ze0mbg8o9ea363302o.mysql.rds.aliyuncs.com:3306/party_building</jdbc-url>
-    </data-source>
   </component>
 </project>

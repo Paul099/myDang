@@ -1198,13 +1198,12 @@ def MeetingAnalysisApi(request):
             data = []
             if departmentid==0:
                 if meetingtypeid==0:
-                    M_obj = Meeting.objects.filter(time__range=(begin,end),is_approve=1)
+                    yjs_meeting_num = Meeting.objects.filter(state_id=2,time__range=(begin,end),is_approve=1).count()#已结束
+                    wks_meeting_num = Meeting.objects.filter(state_id=1, time__range=(begin, end), is_approve=1).count()
 
                 else:
-                    M_obj = Meeting.objects.filter(time__range=(begin, end),is_approve=1,meeting_type_id=meetingtypeid)
-
-                yjs_meeting_num = M_obj.filter(state_id=2).count()#已结束的会议
-                wks_meeting_num = M_obj.filter(state_id=1).count()
+                    yjs_meeting_num = Meeting.objects.filter(state_id=2,meeting_type_id=meetingtypeid,time__range=(begin,end),is_approve=1).count()#已结束
+                    wks_meeting_num = Meeting.objects.filter(state_id=1,meeting_type_id=meetingtypeid, time__range=(begin, end), is_approve=1).count()
                 meeting_num = yjs_meeting_num+wks_meeting_num
             # rate = []
             # m_rate = []
@@ -1215,21 +1214,20 @@ def MeetingAnalysisApi(request):
                     'meeting_num':meeting_num,
                     'yjs_meeting_num':yjs_meeting_num,
                     'wks_meeting_num':wks_meeting_num,
-                    'meeting_rate':yjs_meeting_num / meeting_num,
+                    'meeting_rate':yjs_meeting_num/meeting_num,
                     'department':0
                     }
                 data.append(m)
             else:
                 department_id=departmentid.split(",")
                 for department in department_id:
-                    if meetingtypeid == 0:
-                        M_obj = Meeting.objects.filter(department_id=department,time__range=(begin, end), is_approve=1)
+                    if meetingtypeid==0:
+                        yjs_meeting_num = Meeting.objects.filter(department_id=department,state_id=2, time__range=(begin, end),is_approve=1).count()  # 未开始的会议
+                        wks_meeting_num = Meeting.objects.filter(department_id=department,state_id=1, time__range=(begin, end),is_approve=1).count()
 
                     else:
-                        M_obj = Meeting.objects.filter(department_id=department,time__range=(begin, end), is_approve=1,meeting_type_id=meetingtypeid)
-
-                    yjs_meeting_num = M_obj.filter(state_id=2).count()  # 已结束的会议
-                    wks_meeting_num = M_obj.filter(state_id=1).count()
+                        yjs_meeting_num = Meeting.objects.filter(department_id=department,meeting_type_id=meetingtypeid, state_id=2,time__range=(begin, end),is_approve=1).count()  # 未开始的会议
+                        wks_meeting_num = Meeting.objects.filter(department_id=department,meeting_type_id=meetingtypeid, state_id=1,time__range=(begin, end), is_approve=1).count()
                     meeting_num = yjs_meeting_num + wks_meeting_num
                     # rate = []
                     # m_rate = []
@@ -1240,7 +1238,7 @@ def MeetingAnalysisApi(request):
                         'meeting_num': meeting_num,
                         'yjs_meeting_num': yjs_meeting_num,
                         'wks_meeting_num': wks_meeting_num,
-                        'meeting_rate': yjs_meeting_num / meeting_num,
+                        'meeting_rate': yjs_meeting_num/meeting_num,
                         'department':department
                     }
                     data.append(m)
