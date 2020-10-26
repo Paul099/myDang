@@ -148,7 +148,6 @@ class Meeting(models.Model):
         db_table = 'meeting'
 
 
-
 class MeetingAnswer(models.Model):
     answer = models.CharField(max_length=255, blank=True, null=True)
 
@@ -211,6 +210,7 @@ class ObserRoleRelation(models.Model):
 class ObservationList(models.Model):
     observation_point = models.CharField(max_length=255, blank=True, null=True)
     pid = models.ForeignKey('self', models.DO_NOTHING, db_column='pid', blank=True, null=True)
+    num = models.IntegerField(blank=True, null=True)
 
     class Meta:
         managed = False
@@ -226,11 +226,10 @@ class Overtime(models.Model):
         db_table = 'overtime'
 
 
-
-
 class PartyBranch(models.Model):
     party_branch = models.CharField(max_length=255, blank=True, null=True)
     pid = models.ForeignKey('self', models.DO_NOTHING, db_column='pid', blank=True, null=True)
+    party_type = models.IntegerField()
 
     class Meta:
         managed = False
@@ -257,6 +256,7 @@ class ProgressType(models.Model):
 class RespList(models.Model):
     content = models.CharField(max_length=255, blank=True, null=True)
     pid = models.ForeignKey('self', models.DO_NOTHING, db_column='pid', blank=True, null=True)
+    num = models.IntegerField(blank=True, null=True)
 
     class Meta:
         managed = False
@@ -403,8 +403,8 @@ class TaskType(models.Model):
 
 
 class TaskUserRelation(models.Model):
-    user = models.ForeignKey('UserInfo', models.DO_NOTHING, blank=True, null=True)
     task = models.ForeignKey(Task, models.DO_NOTHING, blank=True, null=True)
+    user = models.ForeignKey('UserInfo', models.DO_NOTHING, blank=True, null=True)
 
     class Meta:
         managed = False
@@ -419,7 +419,25 @@ class UserInfo(models.Model):
     is_ratifier = models.IntegerField(blank=True, null=True)
     vx_code = models.CharField(max_length=255, blank=True, null=True)
     name = models.CharField(max_length=255, blank=True, null=True)
+    birthday = models.CharField(max_length=255, blank=True, null=True)
+    rd_date = models.CharField(max_length=255, blank=True, null=True)
+    is_yubei = models.IntegerField(blank=True, null=True)
+    shenfen = models.IntegerField(blank=True, null=True)
+    zw_zcdw = models.IntegerField(blank=True, null=True)
+    zw_dw = models.IntegerField(blank=True, null=True)
+    zw_zb = models.IntegerField(blank=True, null=True)
+    sex = models.CharField(max_length=255, blank=True, null=True)
+    nation = models.CharField(max_length=255, blank=True, null=True)
 
     class Meta:
         managed = False
         db_table = 'user_info'
+
+
+class Zw(models.Model):
+    id = models.IntegerField(primary_key=True)
+    zw = models.CharField(max_length=255, blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'zw'
